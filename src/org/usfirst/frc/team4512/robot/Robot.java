@@ -34,12 +34,12 @@ import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 public class Robot extends IterativeRobot {
 	/** Hardware */
 	/* Right Talons */
-	TalonSRX _rightR = new TalonSRX(1);
-	TalonSRX _rightL = new TalonSRX(2);
+	TalonSRX dRightF = new TalonSRX(1);
+	TalonSRX dRightB = new TalonSRX(2);
 
 	/* Left Talons */
-	TalonSRX _leftR = new TalonSRX(3);
-	TalonSRX _leftL = new TalonSRX(4);
+	TalonSRX dLeftF = new TalonSRX(3);
+	TalonSRX dLeftB = new TalonSRX(4);
 	
 	/* Lift Victors */
 	VictorSP liftF = new VictorSP(0);
@@ -50,19 +50,20 @@ public class Robot extends IterativeRobot {
 	Spark armL = new Spark(5);
 	
 	/** Software */
+	/* Live Window */
 	String autoCommand;
 	SendableChooser<String> autoChoose;
 	
 	/* Sensors */
-	private Encoder dEncoderL;
-	private Encoder dEncoderR;
+	private Encoder dEncoderB;
+	private Encoder dEncoderF;
 	private Encoder liftEncoder;
 	private BuiltInAccelerometer accel;
 	private DigitalInput sUp;
 	private DigitalInput sDown;
 	
 	/* Constants */
-	private static double driveSpeed = 0.5;//overall speed affecting robots actions
+	private static double driveSpeed;//overall speed affecting robots actions
 	private static double forward; //value affecting forward speed in feedforward
 	private static double turn; //value affecting turning in feedforward
 	private static int lState;//determine state for executing lift commands
@@ -87,8 +88,8 @@ public class Robot extends IterativeRobot {
 		
 		
 		/* Sensor assignment *///code matches electrical
-		dEncoderL = new Encoder(4, 5);
-		dEncoderR = new Encoder(2, 3);
+		dEncoderB = new Encoder(4, 5);
+		dEncoderF = new Encoder(2, 3);
 		liftEncoder = new Encoder(6, 7);
 		accel = new BuiltInAccelerometer();
 		sUp = new DigitalInput(1);
@@ -101,22 +102,22 @@ public class Robot extends IterativeRobot {
 		SmartDashboard.putData("Auto Chooser", autoChoose);
 		
 		/* Disable motor controllers */
-		_rightR.set(ControlMode.PercentOutput, 0);
-		_rightL.set(ControlMode.PercentOutput, 0);
-		_leftR.set(ControlMode.PercentOutput, 0);
-		_leftL.set(ControlMode.PercentOutput, 0);
+		dRightF.set(ControlMode.PercentOutput, 0);
+		dRightB.set(ControlMode.PercentOutput, 0);
+		dLeftF.set(ControlMode.PercentOutput, 0);
+		dLeftB.set(ControlMode.PercentOutput, 0);
 		
 		/* Set Neutral mode *///motor behavior
-		_rightR.setNeutralMode(NeutralMode.Brake);
-		_rightL.setNeutralMode(NeutralMode.Brake);
-		_leftR.setNeutralMode(NeutralMode.Brake);
-		_leftL.setNeutralMode(NeutralMode.Brake);
+		dRightF.setNeutralMode(NeutralMode.Brake);
+		dRightB.setNeutralMode(NeutralMode.Brake);
+		dLeftF.setNeutralMode(NeutralMode.Brake);
+		dLeftB.setNeutralMode(NeutralMode.Brake);
 
 		/* Configure output direction */
-		_rightR.setInverted(false);
-		_rightL.setInverted(false);
-		_leftR.setInverted(true);
-		_leftL.setInverted(true);
+		dRightF.setInverted(false);
+		dRightB.setInverted(false);
+		dLeftF.setInverted(true);
+		dLeftB.setInverted(true);
 		armR.setInverted(true);
 		armL.setInverted(false);
 		
@@ -124,6 +125,26 @@ public class Robot extends IterativeRobot {
 		driveSpeed = 0.5;
 		lState = 0;
 		maxLift = 6000;
+	}
+	
+	@Override
+	public void robotPeriodic() {//this command is like auto or teleop periodic, but is ran regardless of mode, even disabled(after other periodics)
+		SmartDashboard.putNumber("DriveSpeed", driveSpeed);
+		SmartDashboard.putNumber("LeftSpeed", dLeftF.getMotorOutputPercent());
+		SmartDashboard.putNumber("RightSpeed", dRightF.getMotorOutputPercent());
+		SmartDashboard.putNumber("LiftSpeed", liftF.get());
+		SmartDashboard.putNumber("ArmRSpeed", armR.get());
+		SmartDashboard.putNumber("ArmLSpeed", armL.get());		
+		SmartDashboard.putBoolean("Top", sUp.get());
+		SmartDashboard.putBoolean("Down", sDown.get());
+		double[] dArray = {(double)dEncoderB.get(), (double)dEncoderF.get()};
+		SmartDashboard.putNumberArray("DriveEncoders", dArray);
+		SmartDashboard.putNumber("LiftEncoder", liftEncoder.get());
+		SmartDashboard.putNumber("MaxLift", maxLift);
+		SmartDashboard.putNumber("TimeTotal", Timer.getFPGATimestamp());
+		SmartDashboard.putNumber("TimeLeft", Timer.getMatchTime());
+		double[] gArray = {accel.getX(),accel.getY(),accel.getZ()};
+		SmartDashboard.putNumberArray("Gyro", gArray);
 	}
 	
 	@Override
@@ -141,10 +162,10 @@ public class Robot extends IterativeRobot {
 	
 	@Override
 	public void autonomousPeriodic() {//iteratively run while auto is active
-		_rightR.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, +turn);
-		_rightL.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, +turn);
-		_leftR.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, -turn);
-		_leftL.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, -turn);
+		dRightF.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, +turn);
+		dRightB.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, +turn);
+		dLeftF.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, -turn);
+		dLeftB.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, -turn);
 	}
 	
 	@Override
@@ -152,8 +173,8 @@ public class Robot extends IterativeRobot {
 		forward = 0;
 		turn = 0;
 		liftEncoder.reset();
-		dEncoderL.reset();
-		dEncoderR.reset();
+		dEncoderB.reset();
+		dEncoderF.reset();
 		System.out.println("--Feed Forward Teleop--");
 	}
 	
@@ -161,7 +182,7 @@ public class Robot extends IterativeRobot {
 	@Override
 	public void teleopPeriodic() {//iteratively runs while tele-op is active
 		//System.out.println("X: "+accel.getX()+"  Y: "+accel.getY()+"  Z: "+accel.getZ());
-		//System.out.println("d: "+sDown.get()+"  u: "+sUp.get()+"   LiftE: "+liftEncoder.get() + "   DriveL: " + dEncoderL.get() + "   DriveR: " + dEncoderR.get());
+		//System.out.println("d: "+sDown.get()+"  u: "+sUp.get()+"   LiftE: "+liftEncoder.get() + "   DriveL: " + dEncoderB.get() + "   DriveR: " + dEncoderF.get());
 		System.out.println("Max: "+maxLift);
 		
 		/* Controller interface => Motors */
@@ -170,10 +191,10 @@ public class Robot extends IterativeRobot {
 
 		/* Basic Arcade Drive using PercentOutput along with Arbitrary FeedForward supplied by turn */
 		//given a forward value and a turn value, will automatically do all the math and appropriately send signals
-		_rightR.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, +turn);
-		_rightL.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, +turn);
-		_leftR.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, -turn);
-		_leftL.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, -turn);
+		dRightF.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, +turn);
+		dRightB.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, +turn);
+		dLeftF.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, -turn);
+		dLeftB.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, -turn);
 		
 		
 		/* Lift */ 
@@ -311,10 +332,10 @@ public class Robot extends IterativeRobot {
 		
 		while(start + time > System.currentTimeMillis())
 		{
-			_rightR.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, 0);
-			_rightL.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, 0);
-			_leftR.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, 0);
-			_leftL.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, 0);
+			dRightF.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, 0);
+			dRightB.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, 0);
+			dLeftF.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, 0);
+			dLeftB.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, 0);
 		}
 	}
 	
@@ -325,10 +346,10 @@ public class Robot extends IterativeRobot {
 		
 		while(start + time > System.currentTimeMillis())
 		{
-			_rightR.set(ControlMode.PercentOutput, 0, DemandType.ArbitraryFeedForward, +turn);
-			_rightL.set(ControlMode.PercentOutput, 0, DemandType.ArbitraryFeedForward, +turn);
-			_leftR.set(ControlMode.PercentOutput, 0, DemandType.ArbitraryFeedForward, -turn);
-			_leftL.set(ControlMode.PercentOutput, 0, DemandType.ArbitraryFeedForward, -turn);
+			dRightF.set(ControlMode.PercentOutput, 0, DemandType.ArbitraryFeedForward, +turn);
+			dRightB.set(ControlMode.PercentOutput, 0, DemandType.ArbitraryFeedForward, +turn);
+			dLeftF.set(ControlMode.PercentOutput, 0, DemandType.ArbitraryFeedForward, -turn);
+			dLeftB.set(ControlMode.PercentOutput, 0, DemandType.ArbitraryFeedForward, -turn);
 		}
 	}
 	
@@ -337,17 +358,17 @@ public class Robot extends IterativeRobot {
 	{
 		double value = 360 / (6 * Math.PI) * 12 * feet - (19.5 / 12);
 		
-		while (dEncoderL.get() < value)
+		while (dEncoderB.get() < value)
 		{
-			_rightR.set(ControlMode.PercentOutput, -power, DemandType.ArbitraryFeedForward, 0);
-			_rightL.set(ControlMode.PercentOutput, -power, DemandType.ArbitraryFeedForward, 0);
-			_leftR.set(ControlMode.PercentOutput, -power, DemandType.ArbitraryFeedForward, 0);
-			_leftL.set(ControlMode.PercentOutput, -power, DemandType.ArbitraryFeedForward, 0);
+			dRightF.set(ControlMode.PercentOutput, -power, DemandType.ArbitraryFeedForward, 0);
+			dRightB.set(ControlMode.PercentOutput, -power, DemandType.ArbitraryFeedForward, 0);
+			dLeftF.set(ControlMode.PercentOutput, -power, DemandType.ArbitraryFeedForward, 0);
+			dLeftB.set(ControlMode.PercentOutput, -power, DemandType.ArbitraryFeedForward, 0);
 		}
 		
-		_rightR.set(ControlMode.PercentOutput, 0, DemandType.ArbitraryFeedForward, 0);
-		_rightL.set(ControlMode.PercentOutput, 0, DemandType.ArbitraryFeedForward, 0);
-		_leftR.set(ControlMode.PercentOutput, 0, DemandType.ArbitraryFeedForward, 0);
-		_leftL.set(ControlMode.PercentOutput, 0, DemandType.ArbitraryFeedForward, 0);
+		dRightF.set(ControlMode.PercentOutput, 0, DemandType.ArbitraryFeedForward, 0);
+		dRightB.set(ControlMode.PercentOutput, 0, DemandType.ArbitraryFeedForward, 0);
+		dLeftF.set(ControlMode.PercentOutput, 0, DemandType.ArbitraryFeedForward, 0);
+		dLeftB.set(ControlMode.PercentOutput, 0, DemandType.ArbitraryFeedForward, 0);
 	}
 }

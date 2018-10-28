@@ -18,6 +18,7 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.Victor;
 import edu.wpi.first.wpilibj.VictorSP;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.GenericHID.Hand;
 import edu.wpi.first.wpilibj.BuiltInAccelerometer;
 import edu.wpi.first.wpilibj.DigitalInput;
@@ -48,6 +49,10 @@ public class Robot extends IterativeRobot {
 	Spark armR = new Spark(4);
 	Spark armL = new Spark(5);
 	
+	/** Software */
+	String autoCommand;
+	SendableChooser<String> autoChoose;
+	
 	/* Sensors */
 	private Encoder dEncoderL;
 	private Encoder dEncoderR;
@@ -56,34 +61,32 @@ public class Robot extends IterativeRobot {
 	private DigitalInput sUp;
 	private DigitalInput sDown;
 	
-	/** Values */
-	private static double driveSpeed = 0.5;
-	private static double forward;
-	private static double turn;
-	private static int lState;
-	private int liftZero = -1373; //Set it to an outlandish value so the min function for recalibrating this works initially
-	private int liftTop = 4632; //Same here
-	private boolean liftUp = false;
+	/* Constants */
+	private static double driveSpeed = 0.5;//overall speed affecting robots actions
+	private static double forward; //value affecting forward speed in feedforward
+	private static double turn; //value affecting turning in feedforward
+	private static int lState;//determine state for executing lift commands
+	private static int maxLift;//top of the lift in counts
+	private static Hand left = GenericHID.Hand.kLeft; //constant referring to
+	private static Hand right = GenericHID.Hand.kRight;//the side of controller
 	
+	private String autoSelected; //determine state for executing autonomous
+								 //changes which auto will be run
 	
-	private String autoSelected;
-	
-	
-	private XboxController xbox; // more buttons :)
-	private Debouncer uDebouncer; // d-pad doesn't return values lightning fast
-	private Debouncer dDebouncer; // define buttons to only return every period
-	private static Hand left = GenericHID.Hand.kLeft;
-	private static Hand right = GenericHID.Hand.kRight;
+	/* Controls */
+	private XboxController xbox; //object for controller --more buttons :)
+	private Debouncer uDebouncer; //d-pad doesn't return values lightning fast
+	private Debouncer dDebouncer; //define buttons to only return every period
 	
 	@Override
-	public void robotInit() {
-		/* Controller, debouncers */
+	public void robotInit() {//commands run on code startup
+		/* Controls' assignment*/
 		xbox = new XboxController(0);
-		uDebouncer = new Debouncer(xbox, 0f, 0.2);
-		dDebouncer = new Debouncer(xbox, 180f, 0.2);
-		lState = 0;
+		uDebouncer = new Debouncer(xbox, 0f, 0.3);
+		dDebouncer = new Debouncer(xbox, 180f, 0.3);
 		
-		/* Sensor assignment */
+		
+		/* Sensor assignment *///code matches electrical
 		dEncoderL = new Encoder(4, 5);
 		dEncoderR = new Encoder(2, 3);
 		liftEncoder = new Encoder(6, 7);
@@ -91,13 +94,19 @@ public class Robot extends IterativeRobot {
 		sUp = new DigitalInput(1);
 		sDown = new DigitalInput(8);
 		
+		/* Live Window assingment */
+		autoChoose = new SendableChooser<String>();
+		autoChoose.addDefault("Default", "default");
+		autoChoose.addObject("Test", "test");
+		SmartDashboard.putData("Auto Chooser", autoChoose);
+		
 		/* Disable motor controllers */
 		_rightR.set(ControlMode.PercentOutput, 0);
 		_rightL.set(ControlMode.PercentOutput, 0);
 		_leftR.set(ControlMode.PercentOutput, 0);
 		_leftL.set(ControlMode.PercentOutput, 0);
 		
-		/* Set Neutral mode */
+		/* Set Neutral mode *///motor behavior
 		_rightR.setNeutralMode(NeutralMode.Brake);
 		_rightL.setNeutralMode(NeutralMode.Brake);
 		_leftR.setNeutralMode(NeutralMode.Brake);
@@ -108,12 +117,20 @@ public class Robot extends IterativeRobot {
 		_rightL.setInverted(false);
 		_leftR.setInverted(true);
 		_leftL.setInverted(true);
+		armR.setInverted(true);
+		armL.setInverted(false);
 		
+		/* Constant assignment */
 		driveSpeed = 0.5;
+		lState = 0;
+		maxLift = 6000;
 	}
 	
 	@Override
-	public void autonomousInit() {
+	public void autonomousInit() {//runs upon auto startup
+		/* Live Window */
+		autoCommand = autoChoose.getSelected();//what option is selected in dashboard?   
+		
 		//autoForwardTime(1000, 0.35);
 		//autoTurnTime(500, 0.35);
 		
@@ -123,7 +140,7 @@ public class Robot extends IterativeRobot {
 	}
 	
 	@Override
-	public void autonomousPeriodic() {
+	public void autonomousPeriodic() {//iteratively run while auto is active
 		_rightR.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, +turn);
 		_rightL.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, +turn);
 		_leftR.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, -turn);
@@ -131,84 +148,95 @@ public class Robot extends IterativeRobot {
 	}
 	
 	@Override
-	public void teleopInit(){
+	public void teleopInit(){//runs upon tele-op startup
 		forward = 0;
 		turn = 0;
-		System.out.println("This is a basic arcade drive using Arbitrary Feed Forward.");
+		liftEncoder.reset();
+		dEncoderL.reset();
+		dEncoderR.reset();
+		System.out.println("--Feed Forward Teleop--");
 	}
 	
 	          /* vv tele-op vv */
 	@Override
-	public void teleopPeriodic() {		
+	public void teleopPeriodic() {//iteratively runs while tele-op is active
 		//System.out.println("X: "+accel.getX()+"  Y: "+accel.getY()+"  Z: "+accel.getZ());
-		System.out.println("d: "+sDown.get()+"  u: "+sUp.get()+"   LiftE: "+liftEncoder.get() + "   DriveL: " + dEncoderL.get() + "   DriveR: " + dEncoderR.get());
-		/* Gamepad processing */
-		forward = deadband(xbox.getY(left))*driveSpeed;
+		//System.out.println("d: "+sDown.get()+"  u: "+sUp.get()+"   LiftE: "+liftEncoder.get() + "   DriveL: " + dEncoderL.get() + "   DriveR: " + dEncoderR.get());
+		System.out.println("Max: "+maxLift);
+		
+		/* Controller interface => Motors */
+		forward = deadband(xbox.getY(left))*driveSpeed;//apply the math to joysticks
 		turn = deadband(xbox.getX(right))*driveSpeed;
 
 		/* Basic Arcade Drive using PercentOutput along with Arbitrary FeedForward supplied by turn */
+		//given a forward value and a turn value, will automatically do all the math and appropriately send signals
 		_rightR.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, +turn);
 		_rightL.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, +turn);
 		_leftR.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, -turn);
 		_leftL.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, -turn);
 		
-		/* Constantly recalibrate the lift encoder bottom value */
-		if(!sDown.get())
-		{
-			liftZero = Math.min(liftZero, liftEncoder.get()); //Henry did a good so this is pretty much always -1373
-			//System.out.println(liftZero);
-		}
-		
-		/* Constantly recalibrates the lift encoder top value */
-		if(sUp.get()) 
-		{
-			liftTop = Math.min(liftTop, liftEncoder.get()); //Same here, it's 4632
-			//System.out.println(liftTop);
-		}
 		
 		/* Lift */ 
-		if(xbox.getBumper(right)){
-			liftF.set(1.0);
-			liftB.set(1.0);
+		if(sDown.get())onDown();//call methods when switches are pressed
+		if(sUp.get())onUp();
+			
+		if(lState!=1||lState!=2)lState=0;
+		if(xbox.getBumper(right)){//upon button press, do this
+			lState = 3;
 		}
 		else if(xbox.getBumper(left)){
-			liftF.set(-.65);
-			liftB.set(-.65);
+			lState = 4;
 		}
-		else if(!sDown.get()){
-			liftF.set(0.11);
-			liftB.set(0.11);
-		}
-		else{
-			liftF.set(0);
-			liftB.set(0);
-		}
-	//	
-	/*	if(xbox.getAButton()) lState = 1;
+		
+		if(uDebouncer.get()) lState = 1;//pressing d-pad will automatically
+		if(dDebouncer.get()) lState = 2;//move the lift to top or bottom
+		
 		switch(lState) {
 		case 1:
-			liftF.set(-.2);
-			liftB.set(-.2);
+			liftF.set(encoderMath((double)liftEncoder.get()/maxLift, driveSpeed));
+			liftB.set(encoderMath((double)liftEncoder.get()/maxLift, driveSpeed));
+			if(sUp.get()) {
+				lState = 0;
+			}
+			break;
+		case 2:
+			liftF.set(-0.7*encoderMath((double)liftEncoder.get()/maxLift, driveSpeed));
+			liftB.set(-0.7*encoderMath((double)liftEncoder.get()/maxLift, driveSpeed));
 			if(sDown.get()) {
 				lState = 0;
+			}
+			break;
+		case 3:
+			liftF.set(encoderMath((double)liftEncoder.get()/maxLift, driveSpeed));
+			liftB.set(encoderMath((double)liftEncoder.get()/maxLift, driveSpeed));
+			break;
+		case 4:
+			liftF.set(-0.8*encoderMath((double)liftEncoder.get()/maxLift, driveSpeed));
+			liftB.set(-0.8*encoderMath((double)liftEncoder.get()/maxLift, driveSpeed));
+			break;
+		default:
+			if(!sDown.get()) {
+				liftF.set(0.11);
+				liftB.set(0.11);
+				if(liftEncoder.get()<700) lState = 2;
+			}else {
 				liftF.set(0);
 				liftB.set(0);
 			}
 			break;
-		default:break;
 		}
-		*/
+		
 		/* Intake */
 		if(xbox.getTriggerAxis(right) > 0) {
-			armR.set(1*-xbox.getTriggerAxis(right));
+			armR.set(1*xbox.getTriggerAxis(right));
 			armL.set(1*xbox.getTriggerAxis(right));
 		}
 		else if(xbox.getTriggerAxis(left) > 0) {
-			armR.set(1*(xbox.getTriggerAxis(left)));
+			armR.set(1*(-xbox.getTriggerAxis(left)));
 			armL.set(1*(-xbox.getTriggerAxis(left)));
 		}
 		else {
-			armR.set(-.18);
+			armR.set(.18);
 			armL.set(.18);
 		}
 		
@@ -260,9 +288,24 @@ public class Robot extends IterativeRobot {
 		return 0;
 	}
 	
+	//return new value after applying to curve
+	public static double encoderMath(double x, double n) {
+		double k = 0.3;//minimum speed when bottom/top
+		n = Math.min((15*Math.pow((n-0.5),3))+1,1); //lift speed changes with drivespeed
+		double y = -(1000*(1-k))*n*Math.pow((x-0.5), 10)+((1-k)*n)+k;//big equation(slow down on bottom/top of lift)
+		y = Math.max(y, 0.3);
+		return y;
+	}
 	
+	public void onDown() {
+		liftEncoder.reset();
+	}
+	public void onUp() {
+		maxLift = liftEncoder.get();
+		System.out.println("Top triggered on: "+liftEncoder.get());
+	}
 	//Quick and dirty methods for making a time-based auto easily
-	void autoForwardTime(int time, double speed) //Time in milliseconds and value you want to pass to the motors
+	private void autoForwardTime(int time, double speed) //Time in milliseconds and value you want to pass to the motors
 	{
 		long start = System.currentTimeMillis();
 		
@@ -276,7 +319,7 @@ public class Robot extends IterativeRobot {
 	}
 	
 	//Exactly the same but turning
-	void autoTurnTime(int time, double turn) //Positive is right and negative is left (I think)
+	private void autoTurnTime(int time, double turn) //Positive is right and negative is left (I think)
 	{
 		long start = System.currentTimeMillis();
 		
@@ -290,7 +333,7 @@ public class Robot extends IterativeRobot {
 	}
 	
 	
-	void autoForwardEncoder(double feet, double power)
+	private void autoForwardEncoder(double feet, double power)
 	{
 		double value = 360 / (6 * Math.PI) * 12 * feet - (19.5 / 12);
 		

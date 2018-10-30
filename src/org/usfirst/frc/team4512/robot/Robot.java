@@ -126,12 +126,12 @@ public class Robot extends IterativeRobot {
 		/* Constant assignment */
 		DSPEED = 0.5;
 		LSTATE = 0;
-		MAXLIFT = 6000;
+		MAXLIFT = 5000;
 	}
 	
 	@Override
 	public void robotPeriodic() {//this command is like auto or teleop periodic, but is ran regardless of mode, even disabled(after other periodics)
-		SmartDashboard.putNumber("DSPEED", DSPEED);
+		SmartDashboard.putNumber("DriveSpeed", DSPEED);
 		SmartDashboard.putNumber("LeftSpeed", dLeftF.getMotorOutputPercent());
 		SmartDashboard.putNumber("RightSpeed", dRightF.getMotorOutputPercent());
 		SmartDashboard.putNumber("LiftSpeed", liftF.get());
@@ -142,7 +142,7 @@ public class Robot extends IterativeRobot {
 		double[] dArray = {(double)dEncoderB.get(), (double)dEncoderF.get()};
 		SmartDashboard.putNumberArray("DriveEncoders", dArray);
 		SmartDashboard.putNumber("LiftEncoder", liftEncoder.get());
-		SmartDashboard.putNumber("MAXLIFT", MAXLIFT);
+		SmartDashboard.putNumber("MaxLift", MAXLIFT);
 		SmartDashboard.putNumber("TimeTotal", Timer.getFPGATimestamp());
 		SmartDashboard.putNumber("TimeLeft", Timer.getMatchTime());
 		double[] gArray = {gyro.getX(),gyro.getY(),gyro.getZ()};

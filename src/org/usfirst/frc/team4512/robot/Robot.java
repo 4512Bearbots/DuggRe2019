@@ -64,8 +64,7 @@ public class Robot extends IterativeRobot {
 	
 	/* Constants */
 	private static double DSPEED;//overall speed affecting robots actions
-	private static double WTIME;//warming for stopping acceleration jerkw
-	private static double ATIME;//timestamp for auto init
+	private static double WTIME;//warming for stopping acceleration jerk
 	private static double FORWARD; //value affecting forward speed in feedforward
 	private static double TURN; //value affecting turning in feedforward
 	private static int LSTATE;//determine state for executing lift commands
@@ -73,6 +72,7 @@ public class Robot extends IterativeRobot {
 	private static Hand KLEFT = GenericHID.Hand.kLeft; //constant referring to
 	private static Hand KRIGHT = GenericHID.Hand.kRight;//the side of controller
 	
+	private Autonomous auto;
 	private String autoSelected; //determine state for executing autonomous
 								 //changes which auto will be run
 	
@@ -154,7 +154,7 @@ public class Robot extends IterativeRobot {
 		/* Live Window */
 		autoCommand = autoChoose.getSelected();//what option is selected in dashboard?   
 		
-		ATIME = Timer.getFPGATimestamp();
+		auto = new Autonomous(autoCommand);
 		//autoForwardTime(1000, 0.35);
 		//autoTurnTime(500, 0.35);
 		
@@ -165,6 +165,8 @@ public class Robot extends IterativeRobot {
 	
 	@Override
 	public void autonomousPeriodic() {//iteratively run while auto is active
+		FORWARD = auto.FORWARD;
+		TURN = auto.TURN;
 		dRightF.set(ControlMode.PercentOutput, FORWARD, DemandType.ArbitraryFeedForward, +TURN);
 		dRightB.set(ControlMode.PercentOutput, FORWARD, DemandType.ArbitraryFeedForward, +TURN);
 		dLeftF.set(ControlMode.PercentOutput, FORWARD, DemandType.ArbitraryFeedForward, -TURN);
@@ -184,9 +186,7 @@ public class Robot extends IterativeRobot {
 	
 	          /* vv tele-op vv */
 	@Override
-	public void teleopPeriodic() {//iteratively runs while tele-op is active
-		System.out.println("Max: "+MAXLIFT);//encoder when lift is at top
-		
+	public void teleopPeriodic() {//iteratively runs while tele-op is active	
 		/* Controller interface => Motors */
 		FORWARD = deadband(xbox.getY(KLEFT))*DSPEED*warming();//apply the math to joysticks
 		TURN = deadband(xbox.getX(KRIGHT))*DSPEED;

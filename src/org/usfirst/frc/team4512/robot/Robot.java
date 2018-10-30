@@ -126,7 +126,7 @@ public class Robot extends IterativeRobot {
 		/* Constant assignment */
 		DSPEED = 0.5;
 		LSTATE = 0;
-		MAXLIFT = 5000;
+		MAXLIFT = 4200;
 	}
 	
 	@Override
@@ -203,7 +203,7 @@ public class Robot extends IterativeRobot {
 		if(sDown.get())onDown();//call methods when switches are pressed
 		if(sUp.get())onUp();
 			
-		if(LSTATE!=1||LSTATE!=2)LSTATE=0;
+		if(LSTATE!=1 && LSTATE!=2)LSTATE=0;
 		if(xbox.getBumper(KRIGHT)){//upon button press, do this
 			LSTATE = 3;
 		}
@@ -216,8 +216,8 @@ public class Robot extends IterativeRobot {
 		
 		switch(LSTATE) {
 		case 1:
-			liftF.set(encoderMath((double)liftEncoder.get()/MAXLIFT, DSPEED));
-			liftB.set(encoderMath((double)liftEncoder.get()/MAXLIFT, DSPEED));
+			liftF.set(0.9*encoderMath((double)liftEncoder.get()/MAXLIFT, DSPEED));
+			liftB.set(0.9*encoderMath((double)liftEncoder.get()/MAXLIFT, DSPEED));
 			if(sUp.get()) {
 				LSTATE = 0;
 			}
@@ -241,7 +241,7 @@ public class Robot extends IterativeRobot {
 			if(!sDown.get()) {
 				liftF.set(0.11);
 				liftB.set(0.11);
-				if(liftEncoder.get()<700) LSTATE = 2;
+				if(liftEncoder.get()<400) LSTATE = 2;
 			}else {
 				liftF.set(0);
 				liftB.set(0);
@@ -311,11 +311,11 @@ public class Robot extends IterativeRobot {
 	
 	//return new value after applying to curve
 	public static double encoderMath(double x, double n) {
-		double k = 0.3;//minimum speed when bottom/top
+		double k = 0.25;//minimum speed when bottom/top
 		//n = Math.min((15*Math.pow((n-0.5),3))+1,1); //lift speed changes with DSPEED
 		n=1;
 		double y = -(1000*(1-k))*n*Math.pow((x-0.5), 10)+((1-k)*n)+k;//big equation(slow down on bottom/top of lift)
-		y = Math.max(y, 0.3);
+		y = Math.max(y, 0.25);
 		return y;
 	}
 	
@@ -323,7 +323,7 @@ public class Robot extends IterativeRobot {
 		liftEncoder.reset();
 	}
 	public void onUp() {
-		MAXLIFT = liftEncoder.get();
+		MAXLIFT = liftEncoder.get()-150;
 		System.out.println("Top triggered on: "+liftEncoder.get());
 	}
 	//Quick and dirty methods for making a time-based auto easily

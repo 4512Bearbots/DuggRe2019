@@ -126,7 +126,7 @@ public class Robot extends IterativeRobot {
 		/* Constant assignment */
 		DSPEED = 0.5;
 		LSTATE = 0;
-		MAXLIFT = 4200;
+		MAXLIFT = 4250;
 	}
 	
 	@Override
@@ -306,7 +306,8 @@ public class Robot extends IterativeRobot {
 	}
 	
 	public static double warming() {
-		return (WTIME==0)?1:Math.min(1, (Timer.getFPGATimestamp()-WTIME)/2);
+		SmartDashboard.putNumber("Warming", Timer.getFPGATimestamp()-WTIME);
+		return (double)((WTIME==0)?1:Math.min(1, (Timer.getFPGATimestamp()-WTIME)+0.1));
 	}
 	
 	//return new value after applying to curve
@@ -323,7 +324,7 @@ public class Robot extends IterativeRobot {
 		liftEncoder.reset();
 	}
 	public void onUp() {
-		MAXLIFT = liftEncoder.get()-150;
+		//MAXLIFT = liftEncoder.get()-150;
 		System.out.println("Top triggered on: "+liftEncoder.get());
 	}
 	//Quick and dirty methods for making a time-based auto easily

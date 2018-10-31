@@ -23,8 +23,7 @@ import edu.wpi.first.wpilibj.GenericHID.Hand;
 import edu.wpi.first.wpilibj.BuiltInAccelerometer;
 import edu.wpi.first.wpilibj.DigitalInput;
 
-import org.usfirst.frc.team4512.robot.Debouncer;
-
+import org.usfirst.frc.team4512.robot.*;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.DemandType;
@@ -33,319 +32,68 @@ import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 @SuppressWarnings("unused")
 public class Robot extends IterativeRobot {
 	/** Hardware */
-	/* Right Talons */
-	TalonSRX dRightF = new TalonSRX(1);
-	TalonSRX dRightB = new TalonSRX(2);
-
-	/* Left Talons */
-	TalonSRX dLeftF = new TalonSRX(3);
-	TalonSRX dLeftB = new TalonSRX(4);
-	
-	/* Lift Victors */
-	VictorSP liftF = new VictorSP(0);
-	VictorSP liftB = new VictorSP(1);
-	
-	/* Intake Victors */
-	Spark armR = new Spark(4);
-	Spark armL = new Spark(5);
+	MotorBase motorBase;
 	
 	/** Software */
 	/* Live Window */
 	String autoCommand;
 	SendableChooser<String> autoChoose;
-	
-	/* Sensors */
-	private Encoder dEncoderL;
-	private Encoder dEncoderR;
-	private Encoder liftEncoder;
-	private BuiltInAccelerometer gyro;
-	private DigitalInput sUp;
-	private DigitalInput sDown;
-	
-	/* Constants */
-	private static double DSPEED;//overall speed affecting robots actions
-	private static double WTIME;//warming for stopping acceleration jerk
-	private static double FORWARD; //value affecting forward speed in feedforward
-	private static double TURN; //value affecting turning in feedforward
-	private static int LSTATE;//determine state for executing lift commands
-	private static int MAXLIFT;//top of the lift in counts
-	private static Hand KLEFT = GenericHID.Hand.kLeft; //constant referring to
-	private static Hand KRIGHT = GenericHID.Hand.kRight;//the side of controller
-	
-	private Autonomous auto;
 	private String autoSelected; //determine state for executing autonomous
 								 //changes which auto will be run
-	
-	/* Controls */
-	private XboxController xbox; //object for controller --more buttons :)
-	private Debouncer uDebouncer; //d-pad doesn't return values lightning fast
-	private Debouncer dDebouncer; //define buttons to only return every period
+	private Autonomous auto;
 	
 	@Override
 	public void robotInit() {//commands run on code startup
-		/* Controls' assignment*/
-		xbox = new XboxController(0);
-		uDebouncer = new Debouncer(xbox, 0f, 0.25);
-		dDebouncer = new Debouncer(xbox, 180f, 0.25);
-		
-		
-		/* Sensor assignment *///code matches electrical
-		dEncoderL = new Encoder(4, 5);
-		dEncoderR = new Encoder(2, 3);
-		liftEncoder = new Encoder(6, 7);
-		gyro = new BuiltInAccelerometer();
-		sUp = new DigitalInput(1);
-		sDown = new DigitalInput(8);
-		
+		motorBase = new MotorBase();
 		/* Live Window assingment */
 		autoChoose = new SendableChooser<String>();
 		autoChoose.addDefault("Default", "default");
 		autoChoose.addObject("Test", "test");
 		SmartDashboard.putData("Auto Chooser", autoChoose);
-		
-		/* Disable motor controllers */
-		dRightF.set(ControlMode.PercentOutput, 0);
-		dRightB.set(ControlMode.PercentOutput, 0);
-		dLeftF.set(ControlMode.PercentOutput, 0);
-		dLeftB.set(ControlMode.PercentOutput, 0);
-		
-		/* Set Neutral mode *///motor behavior
-		dRightF.setNeutralMode(NeutralMode.Brake);
-		dRightB.setNeutralMode(NeutralMode.Brake);
-		dLeftF.setNeutralMode(NeutralMode.Brake);
-		dLeftB.setNeutralMode(NeutralMode.Brake);
-
-		/* Configure output direction */
-		dRightF.setInverted(false);
-		dRightB.setInverted(false);
-		dLeftF.setInverted(true);
-		dLeftB.setInverted(true);
-		armR.setInverted(true);
-		armL.setInverted(false);
-		
-		/* Constant assignment */
-		DSPEED = 0.5;
-		LSTATE = 0;
-		MAXLIFT = 4250;
 	}
 	
 	@Override
 	public void robotPeriodic() {//this command is like auto or teleop periodic, but is ran regardless of mode, even disabled(after other periodics)
-		SmartDashboard.putBoolean("Top", sUp.get());
-		SmartDashboard.putBoolean("Down", sDown.get());
-		SmartDashboard.putNumber("DriveSpeed", DSPEED);
-		SmartDashboard.putNumber("LeftSpeed", dLeftF.getMotorOutputPercent());
-		SmartDashboard.putNumber("RightSpeed", dRightF.getMotorOutputPercent());
-		SmartDashboard.putNumber("LiftSpeed", liftF.get());
-		SmartDashboard.putNumber("ArmRSpeed", armR.get());
-		SmartDashboard.putNumber("ArmLSpeed", armL.get());		
-		SmartDashboard.putNumber("RightDriveEncoder", dEncoderR.get());
-		SmartDashboard.putNumber("LeftDriveEncoder", dEncoderL.get());	
-		SmartDashboard.putNumber("LiftEncoder", liftEncoder.get());
-		SmartDashboard.putNumber("MaxLift", MAXLIFT);
+		SmartDashboard.putBoolean("Top", motorBase.sUp.get());
+		SmartDashboard.putBoolean("Down", motorBase.sDown.get());
+		SmartDashboard.putNumber("DriveSpeed", motorBase.DSPEED);
+		SmartDashboard.putNumber("LeftSpeed", motorBase.dLeftF.getMotorOutputPercent());
+		SmartDashboard.putNumber("RightSpeed", motorBase.dRightF.getMotorOutputPercent());
+		SmartDashboard.putNumber("LiftSpeed", motorBase.liftF.get());
+		SmartDashboard.putNumber("ArmRSpeed", motorBase.armR.get());
+		SmartDashboard.putNumber("ArmLSpeed", motorBase.armL.get());		
+		SmartDashboard.putNumber("RightDriveEncoder", motorBase.dEncoderR.get());
+		SmartDashboard.putNumber("LeftDriveEncoder", motorBase.dEncoderL.get());	
+		SmartDashboard.putNumber("LiftEncoder", motorBase.liftEncoder.get());
+		SmartDashboard.putNumber("MaxLift", motorBase.MAXLIFT);
 		SmartDashboard.putNumber("TimeTotal", Timer.getFPGATimestamp());
 		SmartDashboard.putNumber("TimeLeft", Timer.getMatchTime());
-		SmartDashboard.putNumber("GyroX", gyro.getX());
-		SmartDashboard.putNumber("GyroY", gyro.getY());
-		SmartDashboard.putNumber("GyroZ", gyro.getZ());
+		SmartDashboard.putNumber("GyroX", motorBase.gyro.getX());
+		SmartDashboard.putNumber("GyroY", motorBase.gyro.getY());
+		SmartDashboard.putNumber("GyroZ", motorBase.gyro.getZ());
 	}
 	
 	@Override
 	public void autonomousInit() {//runs upon auto startup
 		/* Live Window */
 		autoCommand = autoChoose.getSelected();//what option is selected in dashboard?   
-		
 		auto = new Autonomous(autoCommand);
-		//autoForwardTime(1000, 0.35);
-		//autoTurnTime(500, 0.35);
-		
-		//Add in stuff to recalibrate the lift here
-		
-		autoForwardEncoder(10.0, 0.35);
 	}
 	
 	@Override
 	public void autonomousPeriodic() {//iteratively run while auto is active
-		FORWARD = auto.FORWARD;
-		TURN = auto.TURN;
-		dRightF.set(ControlMode.PercentOutput, FORWARD, DemandType.ArbitraryFeedForward, +TURN);
-		dRightB.set(ControlMode.PercentOutput, FORWARD, DemandType.ArbitraryFeedForward, +TURN);
-		dLeftF.set(ControlMode.PercentOutput, FORWARD, DemandType.ArbitraryFeedForward, -TURN);
-		dLeftB.set(ControlMode.PercentOutput, FORWARD, DemandType.ArbitraryFeedForward, -TURN);
+		auto.autoPeriodic();
+		motorBase.setDrive(auto.FORWARD, auto.TURN);
 	}
 	
 	@Override
 	public void teleopInit(){//runs upon tele-op startup
-		FORWARD = 0;
-		TURN = 0;
-		WTIME = 0;
-		liftEncoder.reset();
-		dEncoderL.reset();
-		dEncoderR.reset();
-		System.out.println("--Feed Forward Teleop--");
+		motorBase.driveInit();
 	}
 	
 	          /* vv tele-op vv */
 	@Override
 	public void teleopPeriodic() {//iteratively runs while tele-op is active	
-		/* Controller interface => Motors */
-		FORWARD = deadband(xbox.getY(KLEFT))*DSPEED*warming();//apply the math to joysticks
-		TURN = deadband(xbox.getX(KRIGHT))*DSPEED;
-
-		/* Drive Base */
-		assignMotors(FORWARD,TURN);
-		
-		/* Lift */ 
-		//persisting lift motion, or reset when not pressed
-		if(LSTATE!=1 && LSTATE!=2)LSTATE=0;
-		//check input
-		LSTATE=(xbox.getBumper(KRIGHT) && !sUp.get())? 3:0;
-		LSTATE=(xbox.getBumper(KLEFT) && !sDown.get())? 4:0;
-		
-		if(sDown.get())onDown();//call methods when switches are pressed
-		if(sUp.get())onUp();
-
-		if(uDebouncer.get()) LSTATE = 1;//pressing d-pad will automatically
-		if(dDebouncer.get()) LSTATE = 2;//move the lift to top or bottom
-		
-		switch(LSTATE) {
-		case 1:
-			assignLift(encoderMath((double)liftEncoder.get()/MAXLIFT, 0.9));
-			LSTATE=(sUp.get())? 0:LSTATE;
-			break;
-		case 2:
-			assignLift(-encoderMath((double)liftEncoder.get()/MAXLIFT, 0.7));
-			LSTATE=(sDown.get())? 0:LSTATE;
-			break;
-		case 3:
-			assignLift(encoderMath((double)liftEncoder.get()/MAXLIFT, 1));
-			break;
-		case 4:
-			assignLift(-encoderMath((double)liftEncoder.get()/MAXLIFT, 0.8));
-			break;
-		default:
-			if(!sDown.get()) {
-				liftF.set(0.11);
-				liftB.set(0.11);
-				if(liftEncoder.get()<400) LSTATE = 2;
-			}else {
-				liftF.set(0);
-				liftB.set(0);
-			}
-			break;
-		}
-		
-		/* Intake */
-		if(xbox.getTriggerAxis(KRIGHT) > 0) {
-			armR.set(1*xbox.getTriggerAxis(KRIGHT));
-			armL.set(1*xbox.getTriggerAxis(KRIGHT));
-		}
-		else if(xbox.getTriggerAxis(KLEFT) > 0) {
-			armR.set(1*(-xbox.getTriggerAxis(KLEFT)));
-			armL.set(1*(-xbox.getTriggerAxis(KLEFT)));
-		}
-		else {
-			armR.set(.18);
-			armL.set(.18);
-		}
-		
-		/*if(liftEncoder.get() > (liftZero + liftTop) / 4) //If the lift is over halfway up
-		{
-			DSPEED = Math.min(0.3, DSPEED);
-			liftUp = true;
-		} else
-		{
-			liftUp = false;
-		}*/
-		
-		if(xbox.getAButton())DSPEED=0.2;
-		if(xbox.getXButton())DSPEED=0.3;
-		if(xbox.getYButton()&&(liftEncoder.get()/MAXLIFT < 0.7))DSPEED=0.5;
-		if(xbox.getBButton()&&(liftEncoder.get()/MAXLIFT < 0.7))DSPEED=1.0;
-	
-		/* D-Pad debouncers(doesnt activate 3 times per click) */
-		/*if((DSPEED+0.25) < 1 && uDebouncer.get()) {
-			DSPEED = Math.nextUp(DSPEED+0.25);
-			//System.out.println("DSPEED: "+DSPEED);
-		}
-		else if((DSPEED-0.25) > 0 && dDebouncer.get()) {
-			DSPEED = Math.nextDown(DSPEED-0.25);
-			//System.out.println("DSPEED: "+DSPEED);
-		}*/
+		motorBase.drivePeriodic();
 	}          /* ^^ tele-op ^^ */
-			
-		
-
-	/** deadband ? percent, used on the gamepad */
-	double deadband(double value) {
-		double deadzone = 0.15;
-		
-		/* Inside deadband */
-		if ((value >= +deadzone)||(value <= -deadzone)) {
-			if(WTIME==0)WTIME=Timer.getFPGATimestamp();
-			return value;
-		}
-		
-		/* Outside deadband */
-		WTIME=0;
-		return 0;
-	}
-	
-	public static double warming() {
-		SmartDashboard.putNumber("Warming", Timer.getFPGATimestamp()-WTIME);
-		return (double)((WTIME==0)?1:Math.min(1, ((Timer.getFPGATimestamp()-WTIME)+0.1)));
-	}
-	
-	/* Basic Arcade Drive using PercentOutput along with Arbitrary FeedForward supplied by turn */
-		//given a forward value and a turn value, will automatically do all the math and appropriately send signals
-	public void assignMotors(double forward, double turn){
-		dRightF.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, turn);
-		dRightB.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, turn);
-		dLeftF.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, -turn);
-		dLeftB.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, -turn);
-	}
-
-	public void assignLift(double power){
-		liftF.set(power);
-		liftB.set(power);
-	}
-	//return new value after applying to curve
-	public static double encoderMath(double x, double n) {
-		double k = 0.25;//minimum speed when bottom/top
-		//n = Math.min((15*Math.pow((n-0.5),3))+1,1); //lift speed changes with DSPEED
-		double y = -(1000*(1-k))*n*Math.pow((x-0.5), 10)+((1-k)*n)+k;//big equation(slow down on bottom/top of lift)
-		y = Math.max(y, 0.25);
-		return y;
-	}
-	
-	public void onDown() {
-		liftEncoder.reset();
-	}
-	public void onUp() {
-		//MAXLIFT = liftEncoder.get()-150;
-		//System.out.println("Top triggered on: "+liftEncoder.get());
-	}
-	//Quick and dirty methods for making a time-based auto easily
-	private void autoForwardTime(double time, double power) //Time in milliseconds and value you want to pass to the motors
-	{
-		double start = Timer.getFPGATimestamp();
-		while(start + time > Timer.getFPGATimestamp())assignMotors(power,0);
-		assignMotors(0,0);
-	}
-	
-	//Exactly the same but turning
-	private void autoTurnTime(double time, double turn) //Positive is right and negative is left (I think)
-	{
-		double start = Timer.getFPGATimestamp();
-		while(start + time > Timer.getFPGATimestamp())assignMotors(0,turn);
-		assignMotors(0,0);
-	}
-	
-	
-	private void autoForwardEncoder(double feet, double power)
-	{
-		double value = 360 / (6 * Math.PI) * 12 * feet - (19.5 / 12);
-		while (dEncoderL.get() < value) assignMotors(-power,0);
-		assignMotors(0,0);
-	}
 }

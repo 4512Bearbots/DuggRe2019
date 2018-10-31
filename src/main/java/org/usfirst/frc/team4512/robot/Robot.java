@@ -55,8 +55,8 @@ public class Robot extends IterativeRobot {
 	SendableChooser<String> autoChoose;
 	
 	/* Sensors */
-	private Encoder dEncoderB;
-	private Encoder dEncoderF;
+	private Encoder dEncoderL;
+	private Encoder dEncoderR;
 	private Encoder liftEncoder;
 	private BuiltInAccelerometer gyro;
 	private DigitalInput sUp;
@@ -90,8 +90,8 @@ public class Robot extends IterativeRobot {
 		
 		
 		/* Sensor assignment *///code matches electrical
-		dEncoderB = new Encoder(4, 5);
-		dEncoderF = new Encoder(2, 3);
+		dEncoderL = new Encoder(4, 5);
+		dEncoderR = new Encoder(2, 3);
 		liftEncoder = new Encoder(6, 7);
 		gyro = new BuiltInAccelerometer();
 		sUp = new DigitalInput(1);
@@ -131,22 +131,23 @@ public class Robot extends IterativeRobot {
 	
 	@Override
 	public void robotPeriodic() {//this command is like auto or teleop periodic, but is ran regardless of mode, even disabled(after other periodics)
+		SmartDashboard.putBoolean("Top", sUp.get());
+		SmartDashboard.putBoolean("Down", sDown.get());
 		SmartDashboard.putNumber("DriveSpeed", DSPEED);
 		SmartDashboard.putNumber("LeftSpeed", dLeftF.getMotorOutputPercent());
 		SmartDashboard.putNumber("RightSpeed", dRightF.getMotorOutputPercent());
 		SmartDashboard.putNumber("LiftSpeed", liftF.get());
 		SmartDashboard.putNumber("ArmRSpeed", armR.get());
 		SmartDashboard.putNumber("ArmLSpeed", armL.get());		
-		SmartDashboard.putBoolean("Top", sUp.get());
-		SmartDashboard.putBoolean("Down", sDown.get());
-		double[] dArray = {(double)dEncoderB.get(), (double)dEncoderF.get()};
-		SmartDashboard.putNumberArray("DriveEncoders", dArray);
+		SmartDashboard.putNumber("RightDriveEncoder", dEncoderR.get());
+		SmartDashboard.putNumber("LeftDriveEncoder", dEncoderL.get());	
 		SmartDashboard.putNumber("LiftEncoder", liftEncoder.get());
 		SmartDashboard.putNumber("MaxLift", MAXLIFT);
 		SmartDashboard.putNumber("TimeTotal", Timer.getFPGATimestamp());
 		SmartDashboard.putNumber("TimeLeft", Timer.getMatchTime());
-		double[] gArray = {gyro.getX(),gyro.getY(),gyro.getZ()};
-		SmartDashboard.putNumberArray("Gyro", gArray);
+		SmartDashboard.putNumber("GyroX", gyro.getX());
+		SmartDashboard.putNumber("GyroY", gyro.getY());
+		SmartDashboard.putNumber("GyroZ", gyro.getZ());
 	}
 	
 	@Override
@@ -179,8 +180,8 @@ public class Robot extends IterativeRobot {
 		TURN = 0;
 		WTIME = 0;
 		liftEncoder.reset();
-		dEncoderB.reset();
-		dEncoderF.reset();
+		dEncoderL.reset();
+		dEncoderR.reset();
 		System.out.println("--Feed Forward Teleop--");
 	}
 	
@@ -191,51 +192,36 @@ public class Robot extends IterativeRobot {
 		FORWARD = deadband(xbox.getY(KLEFT))*DSPEED*warming();//apply the math to joysticks
 		TURN = deadband(xbox.getX(KRIGHT))*DSPEED;
 
-		/* Basic Arcade Drive using PercentOutput along with Arbitrary FeedForward supplied by turn */
-		//given a forward value and a turn value, will automatically do all the math and appropriately send signals
-		dRightF.set(ControlMode.PercentOutput, FORWARD, DemandType.ArbitraryFeedForward, +TURN);
-		dRightB.set(ControlMode.PercentOutput, FORWARD, DemandType.ArbitraryFeedForward, +TURN);
-		dLeftF.set(ControlMode.PercentOutput, FORWARD, DemandType.ArbitraryFeedForward, -TURN);
-		dLeftB.set(ControlMode.PercentOutput, FORWARD, DemandType.ArbitraryFeedForward, -TURN);
-		
+		/* Drive Base */
+		assignMotors(FORWARD,TURN);
 		
 		/* Lift */ 
+		//persisting lift motion, or reset when not pressed
+		if(LSTATE!=1 && LSTATE!=2)LSTATE=0;
+		//check input
+		LSTATE=(xbox.getBumper(KRIGHT) && !sUp.get())? 3:0;
+		LSTATE=(xbox.getBumper(KLEFT) && !sDown.get())? 4:0;
+		
 		if(sDown.get())onDown();//call methods when switches are pressed
 		if(sUp.get())onUp();
-			
-		if(LSTATE!=1 && LSTATE!=2)LSTATE=0;
-		if(xbox.getBumper(KRIGHT)){//upon button press, do this
-			LSTATE = 3;
-		}
-		else if(xbox.getBumper(KLEFT)){
-			LSTATE = 4;
-		}
-		
+
 		if(uDebouncer.get()) LSTATE = 1;//pressing d-pad will automatically
 		if(dDebouncer.get()) LSTATE = 2;//move the lift to top or bottom
 		
 		switch(LSTATE) {
 		case 1:
-			liftF.set(0.9*encoderMath((double)liftEncoder.get()/MAXLIFT, DSPEED));
-			liftB.set(0.9*encoderMath((double)liftEncoder.get()/MAXLIFT, DSPEED));
-			if(sUp.get()) {
-				LSTATE = 0;
-			}
+			assignLift(encoderMath((double)liftEncoder.get()/MAXLIFT, 0.9));
+			LSTATE=(sUp.get())? 0:LSTATE;
 			break;
 		case 2:
-			liftF.set(-0.7*encoderMath((double)liftEncoder.get()/MAXLIFT, DSPEED));
-			liftB.set(-0.7*encoderMath((double)liftEncoder.get()/MAXLIFT, DSPEED));
-			if(sDown.get()) {
-				LSTATE = 0;
-			}
+			assignLift(-encoderMath((double)liftEncoder.get()/MAXLIFT, 0.7));
+			LSTATE=(sDown.get())? 0:LSTATE;
 			break;
 		case 3:
-			liftF.set(encoderMath((double)liftEncoder.get()/MAXLIFT, DSPEED));
-			liftB.set(encoderMath((double)liftEncoder.get()/MAXLIFT, DSPEED));
+			assignLift(encoderMath((double)liftEncoder.get()/MAXLIFT, 1));
 			break;
 		case 4:
-			liftF.set(-0.8*encoderMath((double)liftEncoder.get()/MAXLIFT, DSPEED));
-			liftB.set(-0.8*encoderMath((double)liftEncoder.get()/MAXLIFT, DSPEED));
+			assignLift(-encoderMath((double)liftEncoder.get()/MAXLIFT, 0.8));
 			break;
 		default:
 			if(!sDown.get()) {
@@ -307,14 +293,26 @@ public class Robot extends IterativeRobot {
 	
 	public static double warming() {
 		SmartDashboard.putNumber("Warming", Timer.getFPGATimestamp()-WTIME);
-		return (double)((WTIME==0)?1:Math.min(1, (Timer.getFPGATimestamp()-WTIME)+0.1));
+		return (double)((WTIME==0)?1:Math.min(1, ((Timer.getFPGATimestamp()-WTIME)+0.1)));
 	}
 	
+	/* Basic Arcade Drive using PercentOutput along with Arbitrary FeedForward supplied by turn */
+		//given a forward value and a turn value, will automatically do all the math and appropriately send signals
+	public void assignMotors(double forward, double turn){
+		dRightF.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, turn);
+		dRightB.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, turn);
+		dLeftF.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, -turn);
+		dLeftB.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, -turn);
+	}
+
+	public void assignLift(double power){
+		liftF.set(power);
+		liftB.set(power);
+	}
 	//return new value after applying to curve
 	public static double encoderMath(double x, double n) {
 		double k = 0.25;//minimum speed when bottom/top
 		//n = Math.min((15*Math.pow((n-0.5),3))+1,1); //lift speed changes with DSPEED
-		n=1;
 		double y = -(1000*(1-k))*n*Math.pow((x-0.5), 10)+((1-k)*n)+k;//big equation(slow down on bottom/top of lift)
 		y = Math.max(y, 0.25);
 		return y;
@@ -325,52 +323,29 @@ public class Robot extends IterativeRobot {
 	}
 	public void onUp() {
 		//MAXLIFT = liftEncoder.get()-150;
-		System.out.println("Top triggered on: "+liftEncoder.get());
+		//System.out.println("Top triggered on: "+liftEncoder.get());
 	}
 	//Quick and dirty methods for making a time-based auto easily
-	private void autoForwardTime(int time, double speed) //Time in milliseconds and value you want to pass to the motors
+	private void autoForwardTime(double time, double power) //Time in milliseconds and value you want to pass to the motors
 	{
-		long start = System.currentTimeMillis();
-		
-		while(start + time > System.currentTimeMillis())
-		{
-			dRightF.set(ControlMode.PercentOutput, FORWARD, DemandType.ArbitraryFeedForward, 0);
-			dRightB.set(ControlMode.PercentOutput, FORWARD, DemandType.ArbitraryFeedForward, 0);
-			dLeftF.set(ControlMode.PercentOutput, FORWARD, DemandType.ArbitraryFeedForward, 0);
-			dLeftB.set(ControlMode.PercentOutput, FORWARD, DemandType.ArbitraryFeedForward, 0);
-		}
+		double start = Timer.getFPGATimestamp();
+		while(start + time > Timer.getFPGATimestamp())assignMotors(power,0);
+		assignMotors(0,0);
 	}
 	
 	//Exactly the same but turning
-	private void autoTurnTime(int time, double turn) //Positive is right and negative is left (I think)
+	private void autoTurnTime(double time, double turn) //Positive is right and negative is left (I think)
 	{
-		long start = System.currentTimeMillis();
-		
-		while(start + time > System.currentTimeMillis())
-		{
-			dRightF.set(ControlMode.PercentOutput, 0, DemandType.ArbitraryFeedForward, +turn);
-			dRightB.set(ControlMode.PercentOutput, 0, DemandType.ArbitraryFeedForward, +turn);
-			dLeftF.set(ControlMode.PercentOutput, 0, DemandType.ArbitraryFeedForward, -turn);
-			dLeftB.set(ControlMode.PercentOutput, 0, DemandType.ArbitraryFeedForward, -turn);
-		}
+		double start = Timer.getFPGATimestamp();
+		while(start + time > Timer.getFPGATimestamp())assignMotors(0,turn);
+		assignMotors(0,0);
 	}
 	
 	
 	private void autoForwardEncoder(double feet, double power)
 	{
 		double value = 360 / (6 * Math.PI) * 12 * feet - (19.5 / 12);
-		
-		while (dEncoderB.get() < value)
-		{
-			dRightF.set(ControlMode.PercentOutput, -power, DemandType.ArbitraryFeedForward, 0);
-			dRightB.set(ControlMode.PercentOutput, -power, DemandType.ArbitraryFeedForward, 0);
-			dLeftF.set(ControlMode.PercentOutput, -power, DemandType.ArbitraryFeedForward, 0);
-			dLeftB.set(ControlMode.PercentOutput, -power, DemandType.ArbitraryFeedForward, 0);
-		}
-		
-		dRightF.set(ControlMode.PercentOutput, 0, DemandType.ArbitraryFeedForward, 0);
-		dRightB.set(ControlMode.PercentOutput, 0, DemandType.ArbitraryFeedForward, 0);
-		dLeftF.set(ControlMode.PercentOutput, 0, DemandType.ArbitraryFeedForward, 0);
-		dLeftB.set(ControlMode.PercentOutput, 0, DemandType.ArbitraryFeedForward, 0);
+		while (dEncoderL.get() < value) assignMotors(-power,0);
+		assignMotors(0,0);
 	}
 }

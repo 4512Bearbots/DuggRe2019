@@ -17,58 +17,60 @@ import edu.wpi.first.wpilibj.XboxController;
 public class MotorBase{
     /** Hardware */
 	/* Right Talons */
-	TalonSRX dRightF = new TalonSRX(1);
-	TalonSRX dRightB = new TalonSRX(2);
+	static TalonSRX dRightF = new TalonSRX(1);
+	static TalonSRX dRightB = new TalonSRX(2);
 
 	/* Left Talons */
-	TalonSRX dLeftF = new TalonSRX(3);
-	TalonSRX dLeftB = new TalonSRX(4);
+	static TalonSRX dLeftF = new TalonSRX(3);
+	static TalonSRX dLeftB = new TalonSRX(4);
 
 	/* Lift Victors */
-	VictorSP liftF = new VictorSP(0);
-	VictorSP liftB = new VictorSP(1);
+	static VictorSP liftF = new VictorSP(0);
+	static VictorSP liftB = new VictorSP(1);
 
 	/* Intake Victors */
-	Spark armR = new Spark(4);
-	Spark armL = new Spark(5);
+	static Spark armR = new Spark(4);
+	static Spark armL = new Spark(5);
 
     /* Sensors */
-	public Encoder dEncoderL;
-	public Encoder dEncoderR;
-	public Encoder liftEncoder;
-	public BuiltInAccelerometer gyro;
-	public DigitalInput sUp;
-	public DigitalInput sDown;
+	public static Encoder dEncoderL;
+	public static Encoder dEncoderR;
+	public static Encoder liftEncoder;
+	public static BuiltInAccelerometer gyro;
+	public static DigitalInput sUp;
+	public static DigitalInput sDown;
 
     /* Constants */
-	public double DSPEED;//overall speed affecting robots actions
-	public double WTIME;//warming for stopping acceleration jerk
-	public double LTIME;//warming for lift
-	public double FORWARD; //value affecting forward speed in feedforward
-	public double TURN; //value affecting turning in feedforward
-	public int LSTATE;//determine state for executing lift commands
-	public int MAXLIFT;//top of the lift in counts
+	public static double DSPEED;//overall speed affecting robots actions
+	public static double WTIME;//warming for stopping acceleration jerk
+	public static double LUTIME;//warming for lift - up
+	public static double LDTIME;//down 
+	public static boolean LDIR;
+	public static double FORWARD; //value affecting forward speed in feedforward
+	public static double TURN; //value affecting turning in feedforward
+	public static int LSTATE;//determine state for executing lift commands
+	public static int MAXLIFT;//top of the lift in counts
 	
 	/* Controls */
-	public XboxController xbox; //object for controller --more buttons :)
-	public Debouncer uDebouncer; //d-pad doesn't return values lightning fast
-	public Debouncer dDebouncer; //define buttons to only return every period
-    private Hand KLEFT = GenericHID.Hand.kLeft; //constant referring to
-    private Hand KRIGHT = GenericHID.Hand.kRight;//the side of controller
+	public static XboxController xbox; //object for controller --more buttons :)
+	public static Debouncer uDebouncer; //d-pad doesn't return values lightning fast
+	public static Debouncer dDebouncer; //define buttons to only return every period
+    private static Hand KLEFT = GenericHID.Hand.kLeft; //constant referring to
+    private static Hand KRIGHT = GenericHID.Hand.kRight;//the side of controller
     
     public MotorBase(){
         /* Controls' assignment*/
-		this.xbox = new XboxController(0);
-		this.uDebouncer = new Debouncer(xbox, 0f, 0.25);
-        this.dDebouncer = new Debouncer(xbox, 180f, 0.25);
+		MotorBase.xbox = new XboxController(0);
+		MotorBase.uDebouncer = new Debouncer(xbox, 0f, 0.25);
+        MotorBase.dDebouncer = new Debouncer(xbox, 180f, 0.25);
         
         /* Sensor assignment *///code matches electrical
-		this.dEncoderL = new Encoder(4, 5);
-		this.dEncoderR = new Encoder(2, 3);
-		this.liftEncoder = new Encoder(6, 7);
-		this.gyro = new BuiltInAccelerometer();
-		this.sUp = new DigitalInput(1);
-        this.sDown = new DigitalInput(8);
+		MotorBase.dEncoderL = new Encoder(4, 5);
+		MotorBase.dEncoderR = new Encoder(2, 3);
+		MotorBase.liftEncoder = new Encoder(6, 7);
+		MotorBase.gyro = new BuiltInAccelerometer();
+		MotorBase.sUp = new DigitalInput(1);
+        MotorBase.sDown = new DigitalInput(8);
         
         
 		/* Disable motor controllers */
@@ -89,12 +91,12 @@ public class MotorBase{
 		armL.setInverted(false);
 		
 		/* Constant assignment */
-		this.DSPEED = 0.5;
-		this.LSTATE = 0;
-		this.MAXLIFT = 4200;//seems to be consistent
+		MotorBase.DSPEED = 0.5;
+		MotorBase.LSTATE = 0;
+		MotorBase.MAXLIFT = 4200;//seems to be consistent
     }
-    public void driveInit(){
-        FORWARD=TURN=WTIME=LTIME = 0;
+    public static void driveInit(){
+		FORWARD=TURN=WTIME=LUTIME=LDTIME = 0;
         setDrive(0,0);
         setLift(0);
 		liftEncoder.reset();
@@ -103,7 +105,7 @@ public class MotorBase{
 		System.out.println("--Feed Forward Teleop--");
     }
 
-    public void drivePeriodic(){
+    public static void drivePeriodic(){
         /* Controller interface => Motors */
 		FORWARD = deadband(xbox.getY(KLEFT))*DSPEED;//apply the math to joysticks
 		TURN = deadband(xbox.getX(KRIGHT))*DSPEED;
@@ -129,16 +131,22 @@ public class MotorBase{
 		case 1://if up d-pad is pressed, automatically go up
 			setLift(encoderMath(liftPercent, 0.9));
 			LSTATE=(sUp.get())? 0:LSTATE;//switch will stop the automatic motion
+			LDIR=true;
 			break;
 		case 2://if down d-pad is pressed, automatically go down
+			liftPercent=Math.min(Math.pow(liftPercent,2)*8+0.5,1);
 			setLift(-encoderMath(liftPercent, 0.6));
 			LSTATE=(sDown.get())? 0:LSTATE;
+			LDIR=false;
 			break;
 		case 3://if right bumper, lift goes up
 			setLift(encoderMath(liftPercent, 1));
+			LDIR=true;
 			break;
 		case 4://if left bumper, lift goes down
+			liftPercent=Math.min(Math.pow(liftPercent,2)*8+0.4,1);
 			setLift(-encoderMath(liftPercent, 0.7));
+			LDIR=false;
 			break;
 		default://keep lift still
 			if(!sDown.get()) {
@@ -170,7 +178,6 @@ public class MotorBase{
 		DSPEED=(xbox.getBButton())?1.0:DSPEED;
 		DSPEED=(liftPercent>0.5 && DSPEED>0.3)?0.3:DSPEED;//if the lift is high up make sure speed is low
 
-	
 		/* D-Pad debouncers(doesnt activate 3 times per click) */
 		/*if((DSPEED+0.25) < 1 && uDebouncer.get()) {
 			DSPEED = Math.nextUp(DSPEED+0.25);
@@ -183,7 +190,7 @@ public class MotorBase{
     }
 
     /** deadband ? percent, used on the gamepad */
-	double deadband(double value) {
+	static double deadband(double value) {
 		double deadzone = 0.15;//smallest amount you can recognize from the controller
 		
 		/* Inside deadband */
@@ -197,7 +204,7 @@ public class MotorBase{
 	
 	/* Basic Arcade Drive using PercentOutput along with Arbitrary FeedForward supplied by turn */
 		//given a forward value and a turn value, will automatically do all the math and appropriately send signals
-	public void setDrive(double forward, double turn){
+	public static void setDrive(double forward, double turn){
 		forward *= Math.min(1,(Timer.getFPGATimestamp()-WTIME)*2 + 0.1);//for the first ~0.5 seconds after first issuing a movement the drivebase is slowed
 		dRightF.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, turn);
 		dRightB.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, turn);
@@ -205,18 +212,24 @@ public class MotorBase{
 		dLeftB.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, -turn);
 	}
 
-	public void setLift(double power){
-		LTIME=(LSTATE==0)?Timer.getFPGATimestamp():LTIME;
+	public static void setLift(double power){
 		if(LSTATE==0){//if the lift wasnt moving
-			LTIME = Timer.getFPGATimestamp();	
+			LUTIME = Timer.getFPGATimestamp();
+			if(LDIR){
+				power *= Math.min(1, interpolate(1,power,(Timer.getFPGATimestamp()-LDTIME)/0.5));	
+			}else{
+				power *= Math.max(-1, interpolate(1,power,(Timer.getFPGATimestamp()-LDTIME)/0.5));	
+			}
+			
 		}else{
-			power *= Math.min(1,(Timer.getFPGATimestamp()-LTIME)*2 + 0.1);//for the first ~0.5 seconds after first issuing a movement the lift is slowed
+			LDTIME = Timer.getFPGATimestamp();
+			power *= Math.min(1,(Timer.getFPGATimestamp()-LUTIME)*2 + 0.1);//for the first ~0.5 seconds after first issuing a movement the lift is slowed
 		}
 		liftF.set(power);
 		liftB.set(power);
     }
     
-    public void setArms(double power){
+    public static void setArms(double power){
         armR.set(power);
         armL.set(power);
 	}
@@ -228,11 +241,16 @@ public class MotorBase{
 		y = Math.max(y, 0.25); //negatives are bad kids
 		return y;
 	}
+
+	private static double interpolate(double a, double b, double x){//given x as a fraction between a and b
+		return a+(x*(b-a));
+	}
+
 	//whenever lift switches are pressed, run these methods
-	public void onDown() {
+	public static void onDown() {
 		liftEncoder.reset();//make sure bottoming out sets the encoder to 0
 	}
-	public void onUp() {
+	public static void onUp() {
 		//MAXLIFT = liftEncoder.get()-150;
 		//System.out.println("Top triggered on: "+liftEncoder.get());
 	}

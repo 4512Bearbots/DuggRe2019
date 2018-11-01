@@ -91,9 +91,8 @@ public class Robot extends IterativeRobot {
 		motorBase.driveInit();
 	}
 	
-	          /* vv tele-op vv */
 	@Override
 	public void teleopPeriodic() {//iteratively runs while tele-op is active	
 		motorBase.drivePeriodic();
-	}          /* ^^ tele-op ^^ */
+	}
 }

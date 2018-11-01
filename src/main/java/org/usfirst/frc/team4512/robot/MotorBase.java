@@ -153,24 +153,17 @@ public class MotorBase{
 		}
 		
 		/* Intake */
-		if(xbox.getTriggerAxis(KRIGHT) > 0) {
-            setArms(xbox.getTriggerAxis(KRIGHT));
+		double rTrigg = xbox.getTriggerAxis(KRIGHT);
+		double lTrigg = xbox.getTriggerAxis(KLEFT);
+		if(rTrigg > 0) {
+            setArms(rTrigg);
 		}
-		else if(xbox.getTriggerAxis(KLEFT) > 0) {
-            setArms(-xbox.getTriggerAxis(KLEFT));
+		else if(lTrigg > 0) {
+            setArms(-lTrigg);
 		}
 		else {
 			setArms(0.18);
 		}
-		
-		/*if(liftEncoder.get() > (liftZero + liftTop) / 4) //If the lift is over halfway up
-		{
-			DSPEED = Math.min(0.3, DSPEED);
-			liftUp = true;
-		} else
-		{
-			liftUp = false;
-		}*/
 		
 		if(xbox.getAButton())DSPEED=0.2;
 		if(xbox.getXButton())DSPEED=0.3;

@@ -27,17 +27,7 @@ public class Autonomous {
 		return (Timer.getFPGATimestamp()>=this.ATIME+start&&Timer.getFPGATimestamp()<=this.ATIME+end)?true:false;
 	}
 
-	//Quick and dirty methods for making a time-based auto easily
-	private void forwardTime(double time, double power) //Time in milliseconds and value you want to pass to the motors
-	{
-		double start = Timer.getFPGATimestamp();
-	}
-	private void forwardTime(double time, double power, double feet){
+	private void forwardEncoder(double power, double feet){
 		double counts = 360 / (6 * Math.PI) * 12 * feet - (19.5 / 12);
-	}
-	//Exactly the same but turning
-	private void turnTime(double time, double turn) //Positive is right and negative is left (I think)
-	{
-		double start = Timer.getFPGATimestamp();
 	}
 }

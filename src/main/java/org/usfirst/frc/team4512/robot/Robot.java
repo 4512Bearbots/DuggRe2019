@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.RobotState;
 import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.Victor;
@@ -56,6 +57,7 @@ public class Robot extends IterativeRobot {
 	public void robotPeriodic() {//this command is like auto or teleop periodic, but is ran regardless of mode, even disabled(after other periodics)
 		SmartDashboard.putBoolean("Top", motorBase.sUp.get());
 		SmartDashboard.putBoolean("Down", motorBase.sDown.get());
+		SmartDashboard.putBoolean("Enabled",RobotState.isEnabled());
 		SmartDashboard.putNumber("DriveSpeed", motorBase.DSPEED);
 		SmartDashboard.putNumber("LeftSpeed", motorBase.dLeftF.getMotorOutputPercent());
 		SmartDashboard.putNumber("RightSpeed", motorBase.dRightF.getMotorOutputPercent());

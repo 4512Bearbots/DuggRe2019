@@ -146,7 +146,7 @@ public class MotorBase{
 			break;
 		case 4://if left bumper, lift goes down
 			//setLift(-encoderMath(liftPercent*Math.min((Math.pow(liftPercent,2)*8+0.4),1), 0.7));
-			setLift(-encoderMath(liftPercent,0.7)*interpolate(0.4,3,liftPercent));
+			setLift(-encoderMath(liftPercent,0.7)*interpolate(0.4,2.5,liftPercent));
 			break;
 		default://keep lift still
 			if(!sDown.get()) {

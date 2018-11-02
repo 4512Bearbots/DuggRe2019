@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.VictorSP;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 public class MotorBase{
     /** Hardware */
 	/* Right Talons */
@@ -42,7 +43,8 @@ public class MotorBase{
 
     /* Constants */
 	public static double DSPEED;//overall speed affecting robots actions
-	public static double WTIME;//warming for stopping acceleration jerk
+	public static double DGTIME;//warming for stopping acceleration jerk
+	public static double DSTIME;//stopped
 	public static double LUTIME;//warming for lift - up
 	public static double LDTIME;//down 
 	public static boolean LDIR;
@@ -96,7 +98,7 @@ public class MotorBase{
 		MotorBase.MAXLIFT = 4200;//seems to be consistent
     }
     public static void driveInit(){
-		FORWARD=TURN=WTIME=LUTIME=LDTIME = 0;
+		FORWARD=TURN=DGTIME=DSTIME=LUTIME=LDTIME = 0;
         setDrive(0,0);
         setLift(0);
 		liftEncoder.reset();
@@ -117,8 +119,8 @@ public class MotorBase{
 		//persisting lift motion, or reset when not pressed
 		if(LSTATE!=1 && LSTATE!=2)LSTATE=0;
 		//check input
-		LSTATE=(xbox.getBumper(KRIGHT) && !sUp.get())? 3:0;
-		LSTATE=(xbox.getBumper(KLEFT) && !sDown.get())? 4:0;
+		LSTATE=(xbox.getBumper(KRIGHT) && !sUp.get())? 3:LSTATE;
+		LSTATE=(xbox.getBumper(KLEFT) && !sDown.get())? 4:LSTATE;
 		
 		if(sDown.get())onDown();//call methods when switches are pressed
 		if(sUp.get())onUp();
@@ -126,7 +128,8 @@ public class MotorBase{
 		if(uDebouncer.get()) LSTATE = 1;//pressing d-pad will automatically
 		if(dDebouncer.get()) LSTATE = 2;//move the lift to top or bottom
         
-        double liftPercent = ((double)liftEncoder.get()-100/MAXLIFT);
+		double liftPercent = (liftEncoder.get()/(double)MAXLIFT);
+		SmartDashboard.putNumber("LiftPercent", liftPercent);
 		switch(LSTATE) {//different states dictate lift speed
 		case 1://if up d-pad is pressed, automatically go up
 			setLift(encoderMath(liftPercent, 0.9));
@@ -134,8 +137,7 @@ public class MotorBase{
 			LDIR=true;
 			break;
 		case 2://if down d-pad is pressed, automatically go down
-			liftPercent=Math.min(Math.pow(liftPercent,2)*8+0.5,1);
-			setLift(-encoderMath(liftPercent, 0.6));
+			setLift(-encoderMath(liftPercent*Math.min((Math.pow(liftPercent,2)*8+0.4),1), 0.6));
 			LSTATE=(sDown.get())? 0:LSTATE;
 			LDIR=false;
 			break;
@@ -144,8 +146,7 @@ public class MotorBase{
 			LDIR=true;
 			break;
 		case 4://if left bumper, lift goes down
-			liftPercent=Math.min(Math.pow(liftPercent,2)*8+0.4,1);
-			setLift(-encoderMath(liftPercent, 0.7));
+			setLift(-encoderMath(liftPercent*Math.min((Math.pow(liftPercent,2)*8+0.4),1), 0.7));
 			LDIR=false;
 			break;
 		default://keep lift still
@@ -195,9 +196,10 @@ public class MotorBase{
 		
 		/* Inside deadband */
 		if ((value >= +deadzone)||(value <= -deadzone)) {
+			DSTIME = Timer.getFPGATimestamp();
 			return value;
 		}else{/* Outside deadband */
-			WTIME = Timer.getFPGATimestamp();
+			DGTIME = Timer.getFPGATimestamp();
 			return 0;
 		}
 	}
@@ -205,7 +207,11 @@ public class MotorBase{
 	/* Basic Arcade Drive using PercentOutput along with Arbitrary FeedForward supplied by turn */
 		//given a forward value and a turn value, will automatically do all the math and appropriately send signals
 	public static void setDrive(double forward, double turn){
-		forward *= Math.min(1,(Timer.getFPGATimestamp()-WTIME)*2 + 0.1);//for the first ~0.5 seconds after first issuing a movement the drivebase is slowed
+		if(forward==0){
+			forward *= Math.min(1,(Timer.getFPGATimestamp()-DGTIME) + 0.1);
+		}else{
+			forward *= Math.min(1,(Timer.getFPGATimestamp()-DGTIME) + 0.1);//for the first ~0.5 seconds after first issuing a movement the drivebase is slowed
+		}
 		dRightF.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, turn);
 		dRightB.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, turn);
 		dLeftF.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, -turn);
@@ -216,9 +222,9 @@ public class MotorBase{
 		if(LSTATE==0){//if the lift wasnt moving
 			LUTIME = Timer.getFPGATimestamp();
 			if(LDIR){
-				power *= Math.min(1, interpolate(1,power,(Timer.getFPGATimestamp()-LDTIME)/0.5));	
+				//power *= Math.min(1, interpolate(1,power,(Timer.getFPGATimestamp()-LDTIME)/0.5));	
 			}else{
-				power *= Math.max(-1, interpolate(1,power,(Timer.getFPGATimestamp()-LDTIME)/0.5));	
+				//power *= Math.max(-1, interpolate(1,power,(Timer.getFPGATimestamp()-LDTIME)/0.5));	
 			}
 			
 		}else{
@@ -238,7 +244,7 @@ public class MotorBase{
 		double k = 0.25;//minimum speed when lift at bottom/top
 		//n = Math.min((15*Math.pow((n-0.5),3))+1,1); //lift speed changes with DSPEED
 		double y = -(1000*(1-k))*0.25*n*Math.pow((x-0.5), 8)+((1-k)*n)+k;//big equation(slow down on bottom/top of lift) https://www.desmos.com/calculator/mqlbagskqz
-		y = Math.max(y, 0.25); //negatives are bad kids
+		y = Math.max(y, k); //negatives are bad kids
 		return y;
 	}
 

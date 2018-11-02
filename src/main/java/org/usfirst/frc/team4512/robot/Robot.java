@@ -8,7 +8,6 @@
 package org.usfirst.frc.team4512.robot;
 
 import edu.wpi.first.wpilibj.IterativeRobot;
-import edu.wpi.first.wpilibj.RobotState;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -16,7 +15,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 @SuppressWarnings("unused")
 public class Robot extends IterativeRobot {
 	/** Hardware */
-	MotorBase MotorBase;
+	MotorBase motorBase;
 	
 	/** Software */
 	/* Live Window */
@@ -28,7 +27,7 @@ public class Robot extends IterativeRobot {
 	
 	@Override
 	public void robotInit() {//commands run on code startup
-		MotorBase = new MotorBase();
+		motorBase = new MotorBase();
 		/* Live Window assingment */
 		autoChoose = new SendableChooser<String>();
 		autoChoose.addDefault("Default", "default");
@@ -40,7 +39,6 @@ public class Robot extends IterativeRobot {
 	public void robotPeriodic() {//this command is like auto or teleop periodic, but is ran regardless of mode, even disabled(after other periodics)
 		SmartDashboard.putBoolean("Top", MotorBase.sUp.get());
 		SmartDashboard.putBoolean("Down", MotorBase.sDown.get());
-		SmartDashboard.putBoolean("Enabled",RobotState.isEnabled());
 		SmartDashboard.putNumber("DriveSpeed", MotorBase.DSPEED);
 		SmartDashboard.putNumber("LeftSpeed", MotorBase.dLeftF.getMotorOutputPercent());
 		SmartDashboard.putNumber("RightSpeed", MotorBase.dRightF.getMotorOutputPercent());
@@ -48,7 +46,7 @@ public class Robot extends IterativeRobot {
 		SmartDashboard.putNumber("ArmRSpeed", MotorBase.armR.get());
 		SmartDashboard.putNumber("ArmLSpeed", MotorBase.armL.get());		
 		SmartDashboard.putNumber("RightDriveEncoder", MotorBase.dEncoderR.get());
-		SmartDashboard.putNumber("LeftDriveEncoder", MotorBase.dEncoderL.get());	
+		SmartDashboard.putNumber("LeftDriveEncoder", MotorBase.dEncoderL.get());
 		SmartDashboard.putNumber("LiftEncoder", MotorBase.liftEncoder.get());
 		SmartDashboard.putNumber("MaxLift", MotorBase.MAXLIFT);
 		SmartDashboard.putNumber("TimeTotal", Timer.getFPGATimestamp());

@@ -46,10 +46,11 @@ public class MotorBase{
 	public static double DGTIME;//warming for stopping acceleration jerk
 	public static double DSTIME;//stopped
 	public static double LUTIME;//warming for lift - up
-	public static double LDTIME;//down 
-	public static boolean LDIR;
-	public static double FORWARD; //value affecting forward speed in feedforward
-	public static double TURN; //value affecting turning in feedforward
+	public static double LDTIME;//down
+	public static double LHIGH;//last non-zero lift power 
+	public static double FORWARD;//value affecting forward speed in feedforward
+	public static double FORWARDH;//last non-zero FORWARD value
+	public static double TURN;//value affecting turning in feedforward
 	public static int LSTATE;//determine state for executing lift commands
 	public static int MAXLIFT;//top of the lift in counts
 	
@@ -95,10 +96,10 @@ public class MotorBase{
 		/* Constant assignment */
 		MotorBase.DSPEED = 0.5;
 		MotorBase.LSTATE = 0;
-		MotorBase.MAXLIFT = 4200;//seems to be consistent
+		MotorBase.MAXLIFT = 4300;//actual ~4400
     }
     public static void driveInit(){
-		FORWARD=TURN=DGTIME=DSTIME=LUTIME=LDTIME = 0;
+		FORWARD=FORWARDH=TURN=DGTIME=DSTIME=LUTIME=LDTIME = 0;
         setDrive(0,0);
         setLift(0);
 		liftEncoder.reset();
@@ -116,38 +117,36 @@ public class MotorBase{
 		setDrive(FORWARD,TURN);
 		
 		/* Lift */ 
-		//persisting lift motion, or reset when not pressed
+		//stop the lift if bumpers are not pressed
 		if(LSTATE!=1 && LSTATE!=2)LSTATE=0;
 		//check input
-		LSTATE=(xbox.getBumper(KRIGHT) && !sUp.get())? 3:LSTATE;
-		LSTATE=(xbox.getBumper(KLEFT) && !sDown.get())? 4:LSTATE;
-		
+		LSTATE=(xbox.getBumper(KRIGHT))? 3:LSTATE;
+		LSTATE=(xbox.getBumper(KLEFT))? 4:LSTATE;
+		//reset if pressing switches
+		LSTATE=(sUp.get()&&(LSTATE==1||LSTATE==3))?0:LSTATE;
+		LSTATE=(sDown.get()&&(LSTATE==2||LSTATE==4))?0:LSTATE;
 		if(sDown.get())onDown();//call methods when switches are pressed
 		if(sUp.get())onUp();
 
 		if(uDebouncer.get()) LSTATE = 1;//pressing d-pad will automatically
 		if(dDebouncer.get()) LSTATE = 2;//move the lift to top or bottom
         
-		double liftPercent = (liftEncoder.get()/(double)MAXLIFT);
+		double liftPercent = (liftEncoder.get()/(double)MAXLIFT)-0.05;
 		SmartDashboard.putNumber("LiftPercent", liftPercent);
 		switch(LSTATE) {//different states dictate lift speed
 		case 1://if up d-pad is pressed, automatically go up
 			setLift(encoderMath(liftPercent, 0.9));
-			LSTATE=(sUp.get())? 0:LSTATE;//switch will stop the automatic motion
-			LDIR=true;
 			break;
 		case 2://if down d-pad is pressed, automatically go down
-			setLift(-encoderMath(liftPercent*Math.min((Math.pow(liftPercent,2)*8+0.4),1), 0.6));
-			LSTATE=(sDown.get())? 0:LSTATE;
-			LDIR=false;
+			//setLift(-encoderMath(liftPercent*Math.min((Math.pow(liftPercent,2)*8+0.4),1), 0.6));
+			setLift(-encoderMath(liftPercent,0.6)*interpolate(0.3,3,liftPercent));
 			break;
 		case 3://if right bumper, lift goes up
 			setLift(encoderMath(liftPercent, 1));
-			LDIR=true;
 			break;
 		case 4://if left bumper, lift goes down
-			setLift(-encoderMath(liftPercent*Math.min((Math.pow(liftPercent,2)*8+0.4),1), 0.7));
-			LDIR=false;
+			//setLift(-encoderMath(liftPercent*Math.min((Math.pow(liftPercent,2)*8+0.4),1), 0.7));
+			setLift(-encoderMath(liftPercent,0.7)*interpolate(0.4,3,liftPercent));
 			break;
 		default://keep lift still
 			if(!sDown.get()) {
@@ -177,7 +176,7 @@ public class MotorBase{
 		DSPEED=(xbox.getXButton())?0.3:DSPEED;
 		DSPEED=(xbox.getYButton())?0.5:DSPEED;
 		DSPEED=(xbox.getBButton())?1.0:DSPEED;
-		DSPEED=(liftPercent>0.5 && DSPEED>0.3)?0.3:DSPEED;//if the lift is high up make sure speed is low
+		DSPEED=(liftPercent>0.5 && DSPEED>0.2)?0.2:DSPEED;//if the lift is high up make sure speed is low
 
 		/* D-Pad debouncers(doesnt activate 3 times per click) */
 		/*if((DSPEED+0.25) < 1 && uDebouncer.get()) {
@@ -208,9 +207,12 @@ public class MotorBase{
 		//given a forward value and a turn value, will automatically do all the math and appropriately send signals
 	public static void setDrive(double forward, double turn){
 		if(forward==0){
-			forward *= Math.min(1,(Timer.getFPGATimestamp()-DGTIME) + 0.1);
+			forward = interpolate(FORWARDH,0,Timer.getFPGATimestamp()-DSTIME/2.0);
+			//forward *= Math.min(1,(Timer.getFPGATimestamp()-DGTIME) + 0.1);
 		}else{
-			forward *= Math.min(1,(Timer.getFPGATimestamp()-DGTIME) + 0.1);//for the first ~0.5 seconds after first issuing a movement the drivebase is slowed
+			FORWARDH=forward;
+			forward *= interpolate(0.1,1,Timer.getFPGATimestamp()-DGTIME/2.0);//for the first ~0.5 seconds after first issuing a movement the drivebase is slowed
+			//forward *= Math.min(1,(Timer.getFPGATimestamp()-DGTIME) + 0.1);
 		}
 		dRightF.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, turn);
 		dRightB.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, turn);
@@ -219,17 +221,14 @@ public class MotorBase{
 	}
 
 	public static void setLift(double power){
-		if(LSTATE==0){//if the lift wasnt moving
+		if(LSTATE==0&&!sDown.get()&&!sUp.get()){//if the lift wasnt moving
 			LUTIME = Timer.getFPGATimestamp();
-			if(LDIR){
-				//power *= Math.min(1, interpolate(1,power,(Timer.getFPGATimestamp()-LDTIME)/0.5));	
-			}else{
-				//power *= Math.max(-1, interpolate(1,power,(Timer.getFPGATimestamp()-LDTIME)/0.5));	
-			}
-			
-		}else{
+			power = interpolate(LHIGH,power,(Timer.getFPGATimestamp()-LDTIME)/2.0);	
+		}else if(!sDown.get()&&!sUp.get()){
 			LDTIME = Timer.getFPGATimestamp();
-			power *= Math.min(1,(Timer.getFPGATimestamp()-LUTIME)*2 + 0.1);//for the first ~0.5 seconds after first issuing a movement the lift is slowed
+			power *= interpolate(0.1,1,(Timer.getFPGATimestamp()-LUTIME)/2.0);
+			//power *= Math.min(1,(Timer.getFPGATimestamp()-LUTIME) + 0.1);//for the first ~0.5 seconds after first issuing a movement the lift is slowed
+			LHIGH = power;
 		}
 		liftF.set(power);
 		liftB.set(power);
@@ -249,7 +248,9 @@ public class MotorBase{
 	}
 
 	private static double interpolate(double a, double b, double x){//given x as a fraction between a and b
-		return a+(x*(b-a));
+		double math = a+(x*(b-a));
+		math = Math.min(math,Math.max(math,0));
+		return math;
 	}
 
 	//whenever lift switches are pressed, run these methods

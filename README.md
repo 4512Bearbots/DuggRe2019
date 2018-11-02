@@ -1,3 +1,3 @@
 # DuggRe2019
- First implementation of talon srxs, using can bus; robot refresh
- Ported from eclipse to Visual Studio Code
+ First implementation of talon srxs, using can bus; robot refresh. Over the summer ported from Eclipse into Visual Studio Code(Yum)
+

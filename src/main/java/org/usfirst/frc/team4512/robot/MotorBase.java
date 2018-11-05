@@ -207,11 +207,11 @@ public class MotorBase{
 		//given a forward value and a turn value, will automatically do all the math and appropriately send signals
 	public static void setDrive(double forward, double turn){
 		if(forward==0){
-			forward = interpolate(FORWARDH,0,Timer.getFPGATimestamp()-DSTIME/2.0);
+			forward = interpolate(FORWARDH,0,(Timer.getFPGATimestamp()-DSTIME)/2.0);
 			//forward *= Math.min(1,(Timer.getFPGATimestamp()-DGTIME) + 0.1);
 		}else{
 			FORWARDH=forward;
-			forward *= interpolate(0.1,1,Timer.getFPGATimestamp()-DGTIME/2.0);//for the first ~0.5 seconds after first issuing a movement the drivebase is slowed
+			forward *= interpolate(0.1,1,(Timer.getFPGATimestamp()-DGTIME)/2.0);//for the first ~0.5 seconds after first issuing a movement the drivebase is slowed
 			//forward *= Math.min(1,(Timer.getFPGATimestamp()-DGTIME) + 0.1);
 		}
 		dRightF.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, turn);
@@ -249,8 +249,12 @@ public class MotorBase{
 
 	private static double interpolate(double a, double b, double x){//given x as a fraction between a and b
 		double math = a+(x*(b-a));
-		math = Math.min(math,Math.max(math,0));
+		math = limit(limit(0,1,a),limit(0,1,b),math);
 		return math;
+	}
+
+	private static double limit(double min, double max, double x){//limit
+		return (x>max)?max:Math.max(x,min);
 	}
 
 	//whenever lift switches are pressed, run these methods

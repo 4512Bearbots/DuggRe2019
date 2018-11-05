@@ -161,15 +161,9 @@ public class MotorBase{
 		/* Intake */
 		double rTrigg = xbox.getTriggerAxis(KRIGHT);
 		double lTrigg = xbox.getTriggerAxis(KLEFT);
-		if(rTrigg > 0) {
-            setArms(rTrigg);
-		}
-		else if(lTrigg > 0) {
-            setArms(-lTrigg);
-		}
-		else {
-			setArms(0.18);
-		}
+		if(rTrigg > 0) setArms(rTrigg);
+		else if(lTrigg > 0) setArms(-lTrigg);
+		else setArms(0.18);
 		
 		//change speed if buttons are pressed
 		DSPEED=(xbox.getAButton())?0.2:DSPEED;
@@ -195,10 +189,8 @@ public class MotorBase{
 		
 		/* Inside deadband */
 		if ((value >= +deadzone)||(value <= -deadzone)) {
-			DSTIME = Timer.getFPGATimestamp();
 			return value;
 		}else{/* Outside deadband */
-			DGTIME = Timer.getFPGATimestamp();
 			return 0;
 		}
 	}
@@ -207,10 +199,12 @@ public class MotorBase{
 		//given a forward value and a turn value, will automatically do all the math and appropriately send signals
 	public static void setDrive(double forward, double turn){
 		if(forward==0){
+			DGTIME = Timer.getFPGATimestamp();
 			forward = interpolate(FORWARDH,0,(Timer.getFPGATimestamp()-DSTIME)/2.0);
 			//forward *= Math.min(1,(Timer.getFPGATimestamp()-DGTIME) + 0.1);
 		}else{
 			FORWARDH=forward;
+			DSTIME = Timer.getFPGATimestamp();
 			forward *= interpolate(0.1,1,(Timer.getFPGATimestamp()-DGTIME)/2.0);//for the first ~0.5 seconds after first issuing a movement the drivebase is slowed
 			//forward *= Math.min(1,(Timer.getFPGATimestamp()-DGTIME) + 0.1);
 		}
@@ -221,14 +215,14 @@ public class MotorBase{
 	}
 
 	public static void setLift(double power){
-		if(LSTATE==0&&!sDown.get()&&!sUp.get()){//if the lift wasnt moving
-			LUTIME = Timer.getFPGATimestamp();
+		if(LSTATE==0&&!sDown.get()&&!sUp.get()){//if the lift is stopping
+			LUTIME = Timer.getFPGATimestamp();//reference time for starting
 			power = interpolate(LHIGH,power,(Timer.getFPGATimestamp()-LDTIME)/2.0);	
-		}else if(!sDown.get()&&!sUp.get()){
-			LDTIME = Timer.getFPGATimestamp();
+		}else if(!sDown.get()&&!sUp.get()){//if the lift is starting
+			LDTIME = Timer.getFPGATimestamp();//reference time for stopping
+			LHIGH = power;//if the lift stops it slows down from this speed(not max)
 			power *= interpolate(0.1,1,(Timer.getFPGATimestamp()-LUTIME)/2.0);
 			//power *= Math.min(1,(Timer.getFPGATimestamp()-LUTIME) + 0.1);//for the first ~0.5 seconds after first issuing a movement the lift is slowed
-			LHIGH = power;
 		}
 		liftF.set(power);
 		liftB.set(power);
@@ -241,7 +235,6 @@ public class MotorBase{
 	
 	private static double encoderMath(double x, double n) {//give a lift speed based on how high the lift is
 		double k = 0.25;//minimum speed when lift at bottom/top
-		//n = Math.min((15*Math.pow((n-0.5),3))+1,1); //lift speed changes with DSPEED
 		double y = -(1000*(1-k))*0.25*n*Math.pow((x-0.5), 8)+((1-k)*n)+k;//big equation(slow down on bottom/top of lift) https://www.desmos.com/calculator/mqlbagskqz
 		y = Math.max(y, k); //negatives are bad kids
 		return y;

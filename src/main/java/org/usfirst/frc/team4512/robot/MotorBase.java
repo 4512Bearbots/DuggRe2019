@@ -110,8 +110,8 @@ public class MotorBase{
 
     public static void drivePeriodic(){
         /* Controller interface => Motors */
-		FORWARD = deadband(xbox.getY(KLEFT))*DSPEED;//apply the math to joysticks
-		TURN = deadband(xbox.getX(KRIGHT))*DSPEED;
+		FORWARD = deadband(xbox.getY(KLEFT));//apply the math to joysticks
+		TURN = deadband(xbox.getX(KRIGHT));
 
 		/* Drive Base */
 		setDrive(FORWARD,TURN);
@@ -123,13 +123,14 @@ public class MotorBase{
 		LSTATE=(xbox.getBumper(KRIGHT))? 3:LSTATE;
 		LSTATE=(xbox.getBumper(KLEFT))? 4:LSTATE;
 		//reset if pressing switches
-		LSTATE=(sUp.get()&&(LSTATE==1||LSTATE==3))?0:LSTATE;
-		LSTATE=(sDown.get()&&(LSTATE==2||LSTATE==4))?0:LSTATE;
 		if(sDown.get())onDown();//call methods when switches are pressed
 		if(sUp.get())onUp();
 
 		if(uDebouncer.get()) LSTATE = 1;//pressing d-pad will automatically
 		if(dDebouncer.get()) LSTATE = 2;//move the lift to top or bottom
+
+		LSTATE=(sUp.get()&&(LSTATE==1||LSTATE==3))? 0:LSTATE;
+		LSTATE=(sDown.get()&&(LSTATE==2||LSTATE==4))? 0:LSTATE;
         
 		double liftPercent = (liftEncoder.get()/(double)MAXLIFT)-0.05;
 		SmartDashboard.putNumber("LiftPercent", liftPercent);
@@ -139,7 +140,7 @@ public class MotorBase{
 			break;
 		case 2://if down d-pad is pressed, automatically go down
 			//setLift(-encoderMath(liftPercent*Math.min((Math.pow(liftPercent,2)*8+0.4),1), 0.6));
-			setLift(-encoderMath(liftPercent,0.6)*interpolate(0.3,3,liftPercent));
+			setLift(-encoderMath(liftPercent,0.7)*interpolate(0.3,3,liftPercent));
 			break;
 		case 3://if right bumper, lift goes up
 			setLift(encoderMath(liftPercent, 1));
@@ -165,13 +166,16 @@ public class MotorBase{
 		else if(lTrigg > 0) setArms(-lTrigg);
 		else setArms(0.18);
 		
+		/* Drive <-> Lift */
 		//change speed if buttons are pressed
 		DSPEED=(xbox.getAButton())?0.2:DSPEED;
 		DSPEED=(xbox.getXButton())?0.3:DSPEED;
 		DSPEED=(xbox.getYButton())?0.5:DSPEED;
 		DSPEED=(xbox.getBButton())?1.0:DSPEED;
-		DSPEED=(liftPercent>0.5 && DSPEED>0.2)?0.2:DSPEED;//if the lift is high up make sure speed is low
-
+		if(liftPercent>0.4){//slow speed when lift high
+			DSPEED=interpolate(0.43,0.1,liftPercent);
+			DSPEED=Math.round(DSPEED*20)/20.0;
+		}
 		/* D-Pad debouncers(doesnt activate 3 times per click) */
 		/*if((DSPEED+0.25) < 1 && uDebouncer.get()) {
 			DSPEED = Math.nextUp(DSPEED+0.25);
@@ -208,6 +212,8 @@ public class MotorBase{
 			forward *= interpolate(0.1,1,(Timer.getFPGATimestamp()-DGTIME)/2.0);//for the first ~0.5 seconds after first issuing a movement the drivebase is slowed
 			//forward *= Math.min(1,(Timer.getFPGATimestamp()-DGTIME) + 0.1);
 		}
+		forward*=DSPEED;
+		turn*=DSPEED;
 		dRightF.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, turn);
 		dRightB.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, turn);
 		dLeftF.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, -turn);

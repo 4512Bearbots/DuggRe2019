@@ -168,13 +168,15 @@ public class MotorBase{
 		
 		/* Drive <-> Lift */
 		//change speed if buttons are pressed
-		DSPEED=(xbox.getAButton())?0.2:DSPEED;
+		//DSPEED=(xbox.getAButton())?0.2:DSPEED;
 		DSPEED=(xbox.getXButton())?0.3:DSPEED;
 		DSPEED=(xbox.getYButton())?0.5:DSPEED;
 		DSPEED=(xbox.getBButton())?1.0:DSPEED;
 		if(liftPercent>0.4){//slow speed when lift high
-			DSPEED=interpolate(0.43,0.1,liftPercent);
+			DSPEED=interpolate(0.364,0.2,liftPercent);
 			DSPEED=Math.round(DSPEED*20)/20.0;
+		}else if(liftPercent<0.4){
+			DSPEED=(DSPEED<0.3)?0.3:DSPEED;
 		}
 		/* D-Pad debouncers(doesnt activate 3 times per click) */
 		/*if((DSPEED+0.25) < 1 && uDebouncer.get()) {
@@ -204,12 +206,12 @@ public class MotorBase{
 	public static void setDrive(double forward, double turn){
 		if(forward==0){
 			DGTIME = Timer.getFPGATimestamp();
-			forward = interpolate(FORWARDH,0,(Timer.getFPGATimestamp()-DSTIME)/2.0);
+			forward = interpolate(FORWARDH,0,(Timer.getFPGATimestamp()-DSTIME)*2);
 			//forward *= Math.min(1,(Timer.getFPGATimestamp()-DGTIME) + 0.1);
 		}else{
 			FORWARDH=forward;
 			DSTIME = Timer.getFPGATimestamp();
-			forward *= interpolate(0.1,1,(Timer.getFPGATimestamp()-DGTIME)/2.0);//for the first ~0.5 seconds after first issuing a movement the drivebase is slowed
+			forward *= interpolate(0.1,1,(Timer.getFPGATimestamp()-DGTIME)*2);//for the first ~0.5 seconds after first issuing a movement the drivebase is slowed
 			//forward *= Math.min(1,(Timer.getFPGATimestamp()-DGTIME) + 0.1);
 		}
 		forward*=DSPEED;
@@ -223,11 +225,11 @@ public class MotorBase{
 	public static void setLift(double power){
 		if(LSTATE==0&&!sDown.get()&&!sUp.get()){//if the lift is stopping
 			LUTIME = Timer.getFPGATimestamp();//reference time for starting
-			power = interpolate(LHIGH,power,(Timer.getFPGATimestamp()-LDTIME)/2.0);	
+			power = interpolate(LHIGH,power,(Timer.getFPGATimestamp()-LDTIME));	
 		}else if(!sDown.get()&&!sUp.get()){//if the lift is starting
 			LDTIME = Timer.getFPGATimestamp();//reference time for stopping
 			LHIGH = power;//if the lift stops it slows down from this speed(not max)
-			power *= interpolate(0.1,1,(Timer.getFPGATimestamp()-LUTIME)/2.0);
+			power *= interpolate(0.1,1,(Timer.getFPGATimestamp()-LUTIME));
 			//power *= Math.min(1,(Timer.getFPGATimestamp()-LUTIME) + 0.1);//for the first ~0.5 seconds after first issuing a movement the lift is slowed
 		}
 		liftF.set(power);
@@ -248,6 +250,11 @@ public class MotorBase{
 
 	private static double interpolate(double a, double b, double x){//given x as a fraction between a and b
 		double math = a+(x*(b-a));
+		if(a>b){
+			double hold = a;
+			a = b;
+			b = hold;
+		}
 		math = limit(limit(0,1,a),limit(0,1,b),math);
 		return math;
 	}

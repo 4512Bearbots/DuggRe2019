@@ -140,14 +140,14 @@ public class MotorBase{
 			break;
 		case 2://if down d-pad is pressed, automatically go down
 			//setLift(-encoderMath(liftPercent*Math.min((Math.pow(liftPercent,2)*8+0.4),1), 0.6));
-			setLift(-encoderMath(liftPercent,0.7)*interpolate(0.3,3,liftPercent));
+			setLift(-encoderMath(liftPercent,0.7)*interpolate(0.3,5,liftPercent));
 			break;
 		case 3://if right bumper, lift goes up
 			setLift(encoderMath(liftPercent, 1));
 			break;
 		case 4://if left bumper, lift goes down
 			//setLift(-encoderMath(liftPercent*Math.min((Math.pow(liftPercent,2)*8+0.4),1), 0.7));
-			setLift(-encoderMath(liftPercent,0.7)*interpolate(0.4,2.5,liftPercent));
+			setLift(-encoderMath(liftPercent,0.7)*interpolate(0.3,5,liftPercent));
 			break;
 		default://keep lift still
 			if(!sDown.get()) {
@@ -169,15 +169,16 @@ public class MotorBase{
 		/* Drive <-> Lift */
 		//change speed if buttons are pressed
 		//DSPEED=(xbox.getAButton())?0.2:DSPEED;
-		DSPEED=(xbox.getXButton())?0.3:DSPEED;
-		DSPEED=(xbox.getYButton())?0.5:DSPEED;
-		DSPEED=(xbox.getBButton())?1.0:DSPEED;
+		DSPEED=(xbox.getXButton())? 0.3:DSPEED;
+		DSPEED=(xbox.getYButton())? 0.5:DSPEED;
+		DSPEED=(xbox.getBButton())? 1.0:DSPEED;
 		if(liftPercent>0.4){//slow speed when lift high
-			DSPEED=interpolate(0.364,0.2,liftPercent);
-			DSPEED=Math.round(DSPEED*20)/20.0;
+			//DSPEED=interpolate(0.364,0.2,liftPercent);
+			DSPEED=interpolate(0.2,0.364,1-liftPercent);
 		}else if(liftPercent<0.4){
 			DSPEED=(DSPEED<0.3)?0.3:DSPEED;
 		}
+		DSPEED=Math.round(DSPEED*100)/100.0;
 		/* D-Pad debouncers(doesnt activate 3 times per click) */
 		/*if((DSPEED+0.25) < 1 && uDebouncer.get()) {
 			DSPEED = Math.nextUp(DSPEED+0.25);
@@ -207,12 +208,10 @@ public class MotorBase{
 		if(forward==0){
 			DGTIME = Timer.getFPGATimestamp();
 			forward = interpolate(FORWARDH,0,(Timer.getFPGATimestamp()-DSTIME)*2);
-			//forward *= Math.min(1,(Timer.getFPGATimestamp()-DGTIME) + 0.1);
 		}else{
 			FORWARDH=forward;
 			DSTIME = Timer.getFPGATimestamp();
 			forward *= interpolate(0.1,1,(Timer.getFPGATimestamp()-DGTIME)*2);//for the first ~0.5 seconds after first issuing a movement the drivebase is slowed
-			//forward *= Math.min(1,(Timer.getFPGATimestamp()-DGTIME) + 0.1);
 		}
 		forward*=DSPEED;
 		turn*=DSPEED;
@@ -223,15 +222,18 @@ public class MotorBase{
 	}
 
 	public static void setLift(double power){
-		if(LSTATE==0&&!sDown.get()&&!sUp.get()){//if the lift is stopping
-			LUTIME = Timer.getFPGATimestamp();//reference time for starting
-			power = interpolate(LHIGH,power,(Timer.getFPGATimestamp()-LDTIME));	
-		}else if(!sDown.get()&&!sUp.get()){//if the lift is starting
-			LDTIME = Timer.getFPGATimestamp();//reference time for stopping
-			LHIGH = power;//if the lift stops it slows down from this speed(not max)
-			power *= interpolate(0.1,1,(Timer.getFPGATimestamp()-LUTIME));
-			//power *= Math.min(1,(Timer.getFPGATimestamp()-LUTIME) + 0.1);//for the first ~0.5 seconds after first issuing a movement the lift is slowed
+		if(sUp.get() && sDown.get()){
+			if(LSTATE==0){
+				LUTIME = Timer.getFPGATimestamp();//reference time for starting
+				//power = interpolate(LHIGH,power,(Timer.getFPGATimestamp()-LDTIME));
+				power = interpolate(power,LHIGH,(LDTIME+0.5)-Timer.getFPGATimestamp());	
+			}else{
+				LDTIME = Timer.getFPGATimestamp();//reference time for stopping
+				power *= interpolate(0.1,1,(Timer.getFPGATimestamp()-LUTIME));
+				LHIGH = power;//if the lift stops it slows down from this speed(not max)
+			}
 		}
+		power = Math.round(power*1000)/1000.0;
 		liftF.set(power);
 		liftB.set(power);
     }

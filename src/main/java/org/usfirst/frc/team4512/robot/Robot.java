@@ -39,7 +39,7 @@ public class Robot extends IterativeRobot {
 	public void robotPeriodic() {//this command is like auto or teleop periodic, but is ran regardless of mode, even disabled(after other periodics)
 		SmartDashboard.putBoolean("Top", MotorBase.sUp.get());
 		SmartDashboard.putBoolean("Down", MotorBase.sDown.get());
-		SmartDashboard.putNumber("DriveSpeed", MotorBase.DSPEED);
+		SmartDashboard.putNumber("DriveSpeed", MotorBase.dSpeed);
 		SmartDashboard.putNumber("LeftSpeed", MotorBase.dLeftF.getMotorOutputPercent());
 		SmartDashboard.putNumber("RightSpeed", MotorBase.dRightF.getMotorOutputPercent());
 		SmartDashboard.putNumber("LiftSpeed", MotorBase.liftF.get());

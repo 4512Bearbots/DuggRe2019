@@ -42,7 +42,6 @@ public class Robot extends IterativeRobot {
 		SmartDashboard.putNumber("DriveSpeed", MotorBase.dSpeed);
 		SmartDashboard.putNumber("LeftSpeed", MotorBase.dLeftF.getMotorOutputPercent());
 		SmartDashboard.putNumber("RightSpeed", MotorBase.dRightF.getMotorOutputPercent());
-		SmartDashboard.putNumber("LiftSpeed", MotorBase.liftF.get());
 		SmartDashboard.putNumber("ArmRSpeed", MotorBase.armR.get());
 		SmartDashboard.putNumber("ArmLSpeed", MotorBase.armL.get());		
 		SmartDashboard.putNumber("RightDriveEncoder", MotorBase.dEncoderR.get());

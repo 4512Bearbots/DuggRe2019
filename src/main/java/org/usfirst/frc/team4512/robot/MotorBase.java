@@ -34,12 +34,8 @@ public class MotorBase{
 	static Spark armL = new Spark(5);
 
     /* Sensors */
-	public static Encoder dEncoderL;
-	public static Encoder dEncoderR;
-	public static Encoder liftEncoder;
-	public static BuiltInAccelerometer gyro;
-	public static DigitalInput sUp;
-	public static DigitalInput sDown;
+	
+	
 
     /* Constants */
 	public static double dSpeed;//overall speed affecting robots actions
@@ -56,29 +52,8 @@ public class MotorBase{
 	public static double dTurnH;//last non-zero TURN value
 	public static int lState;//determine state for executing lift commands
 	public static final int MAXLIFT = 4300;//top of the lift in counts(actual ~4400)
-	
-	/* Controls */
-	public static XboxController xbox; //object for controller --more buttons :)
-	public static Debouncer uDebouncer; //d-pad doesn't return values lightning fast
-	public static Debouncer dDebouncer; //define buttons to only return every period
-    private static Hand KLEFT = GenericHID.Hand.kLeft; //constant referring to
-    private static Hand KRIGHT = GenericHID.Hand.kRight;//the side of controller
-    
-    public MotorBase(){
-        /* Controls' assignment*/
-		MotorBase.xbox = new XboxController(0);
-		MotorBase.uDebouncer = new Debouncer(xbox, 0f, 0.25);
-        MotorBase.dDebouncer = new Debouncer(xbox, 180f, 0.25);
-        
-        /* Sensor assignment *///code matches electrical
-		MotorBase.dEncoderL = new Encoder(4, 5);
-		MotorBase.dEncoderR = new Encoder(2, 3);
-		MotorBase.liftEncoder = new Encoder(6, 7);
-		MotorBase.gyro = new BuiltInAccelerometer();
-		MotorBase.sUp = new DigitalInput(1);
-        MotorBase.sDown = new DigitalInput(8);
-        
-        
+	    
+    public MotorBase(){        
 		/* Disable motor controllers */
 		setDrive(0, 0);
 		
@@ -104,9 +79,6 @@ public class MotorBase{
 		dForward=dForwardH=dTurn=dgTime=dsTime=luTime=ldTime = 0;
         setDrive(0,0);
         setLift(0);
-		liftEncoder.reset();
-		dEncoderL.reset();
-		dEncoderR.reset();
 		System.out.println("--Feed Forward Teleop--");
     }
 
@@ -190,7 +162,7 @@ public class MotorBase{
     }
 
     /** deadband ? percent, used on the gamepad */
-	static double deadband(double value) {
+	private static double deadband(double value) {
 		double deadzone = 0.15;//smallest amount you can recognize from the controller
 		
 		/* Inside deadband */
@@ -223,6 +195,8 @@ public class MotorBase{
 		}
 		forward*=dSpeed;
 		turn*=dSpeed;
+		SmartDashboard.putNumber("Forward", forward);
+		SmartDashboard.putNumber("Turn", turn);
 		dRightF.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, turn);
 		dRightB.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, turn);
 		dLeftF.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, -turn);
@@ -242,6 +216,7 @@ public class MotorBase{
 			}
 		}
 		power = Math.round(power*1000)/1000.0;
+		SmartDashboard.putNumber("LiftSpeed", power);
 		liftF.set(power);
 		liftB.set(power);
     }

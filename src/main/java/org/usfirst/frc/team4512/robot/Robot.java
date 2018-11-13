@@ -18,6 +18,8 @@ public class Robot extends IterativeRobot {
 	MotorBase motorBase;
 	
 	/** Software */
+	Input input;
+
 	/* Live Window */
 	String autoCommand;
 	SendableChooser<String> autoChoose;
@@ -27,6 +29,7 @@ public class Robot extends IterativeRobot {
 	
 	@Override
 	public void robotInit() {//commands run on code startup
+		input = new Input();
 		motorBase = new MotorBase();
 		/* Live Window assingment */
 		autoChoose = new SendableChooser<String>();
@@ -37,22 +40,22 @@ public class Robot extends IterativeRobot {
 	
 	@Override
 	public void robotPeriodic() {//this command is like auto or teleop periodic, but is ran regardless of mode, even disabled(after other periodics)
-		SmartDashboard.putBoolean("Top", MotorBase.sUp.get());
-		SmartDashboard.putBoolean("Down", MotorBase.sDown.get());
+		SmartDashboard.putBoolean("Top", Input.sUp.get());
+		SmartDashboard.putBoolean("Down", Input.sDown.get());
 		SmartDashboard.putNumber("DriveSpeed", MotorBase.dSpeed);
 		SmartDashboard.putNumber("LeftSpeed", MotorBase.dLeftF.getMotorOutputPercent());
 		SmartDashboard.putNumber("RightSpeed", MotorBase.dRightF.getMotorOutputPercent());
 		SmartDashboard.putNumber("ArmRSpeed", MotorBase.armR.get());
 		SmartDashboard.putNumber("ArmLSpeed", MotorBase.armL.get());		
-		SmartDashboard.putNumber("RightDriveEncoder", MotorBase.dEncoderR.get());
-		SmartDashboard.putNumber("LeftDriveEncoder", MotorBase.dEncoderL.get());
-		SmartDashboard.putNumber("LiftEncoder", MotorBase.liftEncoder.get());
+		SmartDashboard.putNumber("RightDriveEncoder", Input.dEncoderR.get());
+		SmartDashboard.putNumber("LeftDriveEncoder", Input.dEncoderL.get());
+		SmartDashboard.putNumber("LiftEncoder", Input.liftEncoder.get());
 		SmartDashboard.putNumber("MaxLift", MotorBase.MAXLIFT);
 		SmartDashboard.putNumber("TimeTotal", Timer.getFPGATimestamp());
 		SmartDashboard.putNumber("TimeLeft", Timer.getMatchTime());
-		SmartDashboard.putNumber("GyroX", MotorBase.gyro.getX());
-		SmartDashboard.putNumber("GyroY", MotorBase.gyro.getY());
-		SmartDashboard.putNumber("GyroZ", MotorBase.gyro.getZ());
+		SmartDashboard.putNumber("GyroX", Input.gyro.getX());
+		SmartDashboard.putNumber("GyroY", Input.gyro.getY());
+		SmartDashboard.putNumber("GyroZ", Input.gyro.getZ());
 	}
 	
 	@Override

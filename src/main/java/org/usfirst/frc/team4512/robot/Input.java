@@ -43,4 +43,50 @@ public class Input{
 		dEncoderL.reset();
 		dEncoderR.reset();
     }
+
+    public static double getLeftY(){
+        return xbox.getY(KLEFT);
+    }
+    public static double getLeftX(){
+        return xbox.getX(KLEFT);
+    }
+    public static double getRightY(){
+        return xbox.getY(KRIGHT);
+    }
+    public static double getRightX(){
+        return xbox.getX(KRIGHT);
+    }
+    public static boolean getRightBumper(){
+        return xbox.getBumper(KRIGHT);
+    }
+    public static boolean getLeftBumper(){
+        return xbox.getBumper(KLEFT);
+    }
+    public static boolean getAButton(){
+        return xbox.getAButton();
+    }
+    public static boolean getXButton(){
+        return xbox.getXButton();
+    }
+    public static boolean getYButton(){
+        return xbox.getYButton();
+    }
+    public static boolean getBButton(){
+        return xbox.getBButton();
+    }
+    public static double getRightTrigger(){
+        return xbox.getTriggerAxis(KRIGHT);
+    }
+    public static double getLeftTrigger(){
+        return xbox.getTriggerAxis(KLEFT);
+    }
+    public static int getLift(){
+        return liftEncoder.get();
+    }
+    public static int getLeftDrive(){
+        return dEncoderL.get();
+    }
+    public static int getRightDrive(){
+        return dEncoderR.get();
+    }
 }

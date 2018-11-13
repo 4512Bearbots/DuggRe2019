@@ -14,10 +14,13 @@ public class Autonomous {
 		Autonomous.command = command;
 		Autonomous.ATIME = Timer.getFPGATimestamp();
 		Autonomous.FORWARD = Autonomous.TURN = Autonomous.LIFT = 0;
+		Input.init();
 	}
 	
 	public static void autoPeriodic() {
 		switch(Autonomous.command) {
+		case "Test":
+			break;
 		default:
 			break;
 		}

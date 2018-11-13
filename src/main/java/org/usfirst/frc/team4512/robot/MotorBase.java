@@ -5,15 +5,9 @@ import com.ctre.phoenix.motorcontrol.DemandType;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 
-import edu.wpi.first.wpilibj.BuiltInAccelerometer;
-import edu.wpi.first.wpilibj.DigitalInput;
-import edu.wpi.first.wpilibj.Encoder;
-import edu.wpi.first.wpilibj.GenericHID;
-import edu.wpi.first.wpilibj.GenericHID.Hand;
 import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.VictorSP;
-import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 public class MotorBase{
     /** Hardware */
@@ -32,10 +26,6 @@ public class MotorBase{
 	/* Intake Victors */
 	static Spark armR = new Spark(4);
 	static Spark armL = new Spark(5);
-
-    /* Sensors */
-	
-	
 
     /* Constants */
 	public static double dSpeed;//overall speed affecting robots actions
@@ -78,14 +68,15 @@ public class MotorBase{
     public static void driveInit(){
 		dForward=dForwardH=dTurn=dgTime=dsTime=luTime=ldTime = 0;
         setDrive(0,0);
-        setLift(0);
+		setLift(0);
+		Input.init();
 		System.out.println("--Feed Forward Teleop--");
     }
 
     public static void drivePeriodic(){
         /* Controller interface => Motors */
-		dForward = deadband(xbox.getY(KLEFT));//apply the math to joysticks
-		dTurn = deadband(xbox.getX(KRIGHT));
+		dForward = deadband(Input.getLeftY());//apply the math to joysticks
+		dTurn = deadband(Input.getRightX());
 
 		/* Drive Base */
 		setDrive(dForward,dTurn);
@@ -94,19 +85,19 @@ public class MotorBase{
 		//stop the lift if bumpers are not pressed
 		if(lState!=1 && lState!=2)lState=0;
 		//check input
-		lState=(xbox.getBumper(KRIGHT))? 3:lState;
-		lState=(xbox.getBumper(KLEFT))? 4:lState;
+		lState=(Input.getRightBumper())? 3:lState;
+		lState=(Input.getLeftBumper())? 4:lState;
 		//reset if pressing switches
-		if(sDown.get())onDown();//call methods when switches are pressed
-		if(sUp.get())onUp();
+		if(Input.sDown.get())onDown();//call methods when switches are pressed
+		if(Input.sUp.get())onUp();
 
-		if(uDebouncer.get()) lState = 1;//pressing d-pad will automatically
-		if(dDebouncer.get()) lState = 2;//move the lift to top or bottom
+		if(Input.uDebouncer.get()) lState = 1;//pressing d-pad will automatically
+		if(Input.dDebouncer.get()) lState = 2;//move the lift to top or bottom
 
-		lState=(sUp.get()&&(lState==1||lState==3))? 0:lState;
-		lState=(sDown.get()&&(lState==2||lState==4))? 0:lState;
+		lState=(Input.sUp.get()&&(lState==1||lState==3))? 0:lState;
+		lState=(Input.sDown.get()&&(lState==2||lState==4))? 0:lState;
         
-		double liftPercent = (liftEncoder.get()/(double)MAXLIFT)-0.025;
+		double liftPercent = (Input.getLift()/(double)MAXLIFT)-0.025;
 		SmartDashboard.putNumber("LiftPercent", liftPercent);
 		switch(lState) {//different states dictate lift speed
 		case 1://if up d-pad is pressed, automatically go up
@@ -122,9 +113,9 @@ public class MotorBase{
 			setLift(-encoderMath(liftPercent,0.75)*interpolate(0.3,5,liftPercent));
 			break;
 		default://keep lift still
-			if(!sDown.get()) {
+			if(!Input.sDown.get()) {
 				setLift(0.11);//backpressure
-				if(liftEncoder.get()<400) lState = 2;//if the lift is low, auto push down
+				if(Input.getLift()<400) lState = 2;//if the lift is low, auto push down
 			}else {
 				setLift(0);//dont break things if not suspended
 			}
@@ -132,30 +123,30 @@ public class MotorBase{
 		}
 		
 		/* Intake */
-		double rTrigg = xbox.getTriggerAxis(KRIGHT);
-		double lTrigg = xbox.getTriggerAxis(KLEFT);
+		double rTrigg = Input.getRightTrigger();
+		double lTrigg = Input.getLeftTrigger();
 		if(rTrigg > 0) setArms(rTrigg);
 		else if(lTrigg > 0) setArms(-lTrigg);
 		else setArms(0.18);
 		
 		/* Drive <-> Lift */
 		//change speed if buttons are pressed
-		//dSpeed=(xbox.getAButton())?0.2:dSpeed;
-		dSpeed = (xbox.getXButton())? 0.3:dSpeed;
-		dSpeed = (xbox.getYButton())? 0.5:dSpeed;
-		dSpeed = (xbox.getBButton())? 1.0:dSpeed;
+		//dSpeed=(Input.getAButton())?0.2:dSpeed;
+		dSpeed = (Input.getXButton())? 0.3:dSpeed;
+		dSpeed = (Input.getYButton())? 0.5:dSpeed;
+		dSpeed = (Input.getBButton())? 1.0:dSpeed;
 		if(liftPercent>0.4){//slow speed when lift high
-			dSpeed=interpolate(0.15,0.4,1-liftPercent);
+			dSpeed=interpolate(0.25,0.4,1-liftPercent);
 		}else if(liftPercent<0.4){
 			dSpeed=(dSpeed<0.3)? 0.3:dSpeed;
 		}
 		dSpeed=Math.round(dSpeed*100)/100.0;
 		/* D-Pad debouncers(doesnt activate 3 times per click) */
-		/*if((dSpeed+0.25) < 1 && uDebouncer.get()) {
+		/*if((dSpeed+0.25) < 1 && Input.uDebouncer.get()) {
 			dSpeed = Math.nextUp(dSpeed+0.25);
 			//System.out.println("dSpeed: "+dSpeed);
 		}
-		else if((dSpeed-0.25) > 0 && dDebouncer.get()) {
+		else if((dSpeed-0.25) > 0 && Input.dDebouncer.get()) {
 			dSpeed = Math.nextDown(dSpeed-0.25);
 			//System.out.println("dSpeed: "+dSpeed);
 		}*/
@@ -197,6 +188,7 @@ public class MotorBase{
 		turn*=dSpeed;
 		SmartDashboard.putNumber("Forward", forward);
 		SmartDashboard.putNumber("Turn", turn);
+		SmartDashboard.putNumber("DMult", warmMult);
 		dRightF.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, turn);
 		dRightB.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, turn);
 		dLeftF.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, -turn);
@@ -204,7 +196,7 @@ public class MotorBase{
 	}
 
 	public static void setLift(double power){
-		if(!sUp.get() && !sDown.get()){
+		if(!Input.sUp.get() && !Input.sDown.get()){
 			if(lState==0){
 				luTime = Timer.getFPGATimestamp();//reference time for starting
 				//power = interpolate(lHigh,power,(Timer.getFPGATimestamp()-ldTime));
@@ -250,10 +242,10 @@ public class MotorBase{
 
 	//whenever lift switches are pressed, run these methods
 	public static void onDown() {
-		liftEncoder.reset();//make sure bottoming out sets the encoder to 0
+		Input.liftEncoder.reset();//make sure bottoming out sets the encoder to 0
 	}
 	public static void onUp() {
-		//MAXLIFT = liftEncoder.get()-150;
-		//System.out.println("Top triggered on: "+liftEncoder.get());
+		//MAXLIFT = Input.getLift()-150;
+		//System.out.println("Top triggered on: "+Input.getLift());
 	}
 }

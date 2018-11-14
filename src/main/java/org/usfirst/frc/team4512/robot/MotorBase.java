@@ -74,12 +74,8 @@ public class MotorBase{
     }
 
     public static void drivePeriodic(){
-        /* Controller interface => Motors */
-		dForward = deadband(Input.getLeftY());//apply the math to joysticks
-		dTurn = deadband(Input.getRightX());
-
 		/* Drive Base */
-		setDrive(dForward,dTurn);
+		setDrive(Input.getLeftY(),Input.getRightX());
 		
 		/* Lift */ 
 		//stop the lift if bumpers are not pressed
@@ -115,7 +111,7 @@ public class MotorBase{
 		default://keep lift still
 			if(!Input.sDown.get()) {
 				setLift(0.11);//backpressure
-				if(Input.getLift()<400) lState = 2;//if the lift is low, auto push down
+				if(Input.getLift()<500) lState = 2;//if the lift is low, auto push down
 			}else {
 				setLift(0);//dont break things if not suspended
 			}
@@ -136,7 +132,7 @@ public class MotorBase{
 		dSpeed = (Input.getYButton())? 0.5:dSpeed;
 		dSpeed = (Input.getBButton())? 1.0:dSpeed;
 		if(liftPercent>0.4){//slow speed when lift high
-			dSpeed=interpolate(0.25,0.4,1-liftPercent);
+			dSpeed=interpolate(0.2,0.365,1-liftPercent);
 		}else if(liftPercent<0.4){
 			dSpeed=(dSpeed<0.3)? 0.3:dSpeed;
 		}
@@ -152,22 +148,13 @@ public class MotorBase{
 		}*/
     }
 
-    /** deadband ? percent, used on the gamepad */
-	private static double deadband(double value) {
-		double deadzone = 0.15;//smallest amount you can recognize from the controller
-		
-		/* Inside deadband */
-		if ((value >= +deadzone)||(value <= -deadzone)) {
-			return value;
-		}else{/* Outside deadband */
-			return 0;
-		}
-	}
 	
 	/* Basic Arcade Drive using PercentOutput along with Arbitrary FeedForward supplied by turn */
 		//given a forward value and a turn value, will automatically do all the math and appropriately send signals
 	public static void setDrive(double forward, double turn){
-		double warmMult = interpolate(.3,.8,dSpeed)*10;
+		SmartDashboard.putNumber("LeftY", forward);
+		SmartDashboard.putNumber("RightX", turn);
+		double warmMult = interpolate(.3,.7,dSpeed)*10;
 		if(forward==0){
 			dgTime = Timer.getFPGATimestamp();
 			forward = interpolate(0,dForwardH,((dsTime+1)-Timer.getFPGATimestamp())*warmMult);

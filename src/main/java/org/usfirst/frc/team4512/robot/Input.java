@@ -44,17 +44,29 @@ public class Input{
 		dEncoderR.reset();
     }
 
+    /** deadband ? percent, used on the gamepad */
+	private static double deadband(double value) {
+		double deadzone = 0.15;//smallest amount you can recognize from the controller
+		
+		/* Inside deadband */
+		if ((value >= +deadzone)||(value <= -deadzone)) {
+			return value;
+		}else{/* Outside deadband */
+			return 0;
+		}
+    }
+    
     public static double getLeftY(){
-        return xbox.getY(KLEFT);
+        return deadband(xbox.getY(KLEFT));
     }
     public static double getLeftX(){
-        return xbox.getX(KLEFT);
+        return deadband(xbox.getX(KLEFT));
     }
     public static double getRightY(){
-        return xbox.getY(KRIGHT);
+        return deadband(xbox.getY(KRIGHT));
     }
     public static double getRightX(){
-        return xbox.getX(KRIGHT);
+        return deadband(xbox.getX(KRIGHT));
     }
     public static boolean getRightBumper(){
         return xbox.getBumper(KRIGHT);

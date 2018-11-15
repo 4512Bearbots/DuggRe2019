@@ -14,28 +14,21 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 @SuppressWarnings("unused")
 public class Robot extends IterativeRobot {
-	/** Hardware */
-	MotorBase motorBase;
-	
-	/** Software */
-	Input input;
-
 	/* Live Window */
 	String autoCommand;
-	SendableChooser<String> autoChoose;
-	private String autoSelected; //determine state for executing autonomous
-								 //changes which auto will be run
-	private Autonomous auto;
+	SendableChooser<String> autoChoose;//give auto options
+	private String autoSelected;//pick which auto to run
 	
 	@Override
 	public void robotInit() {//commands run on code startup
-		input = new Input();
-		motorBase = new MotorBase();
 		/* Live Window assingment */
 		autoChoose = new SendableChooser<String>();
 		autoChoose.addDefault("Default", "default");
 		autoChoose.addObject("Test", "test");
 		SmartDashboard.putData("Auto Chooser", autoChoose);
+
+		/* Controls */
+		Input.init();
 	}
 	
 	@Override
@@ -56,19 +49,21 @@ public class Robot extends IterativeRobot {
 		SmartDashboard.putNumber("accelX", Input.accel.getX());
 		SmartDashboard.putNumber("accelY", Input.accel.getY());
 		SmartDashboard.putNumber("accelZ", Input.accel.getZ());
+		SmartDashboard.putNumber("Gyro", Input.gyro.getAngle());
+		SmartDashboard.putNumber("GyroC", Input.gyro.getCenter());
+		SmartDashboard.putNumber("GyroO", Input.gyro.getOffset());
 	}
 	
 	@Override
 	public void autonomousInit() {//runs upon auto startup
-		/* Live Window */
-		autoCommand = autoChoose.getSelected();//what option is selected in dashboard?   
-		auto = new Autonomous(autoCommand);
+		Autonomous.command = autoChoose.getSelected();
+		Autonomous.aTime = Timer.getFPGATimestamp();
+		Autonomous.autoInit();
 	}
 	
 	@Override
 	public void autonomousPeriodic() {//iteratively run while auto is active
 		Autonomous.autoPeriodic();
-		MotorBase.setDrive(Autonomous.FORWARD, Autonomous.TURN);
 	}
 	
 	@Override

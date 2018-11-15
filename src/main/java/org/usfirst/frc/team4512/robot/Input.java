@@ -21,41 +21,45 @@ public class Input{
     /* Controls */
 	public static XboxController xbox; //object for controller --more buttons :)
 	public static Debouncer uDebouncer; //d-pad doesn't return values lightning fast
-	public static Debouncer dDebouncer; //define buttons to only return every period
+    public static Debouncer dDebouncer; //define buttons to only return every period
+    public static Debouncer lDebouncer;
+    public static Debouncer rDebouncer;
     private static Hand KLEFT = GenericHID.Hand.kLeft; //constant referring to
     private static Hand KRIGHT = GenericHID.Hand.kRight;//the side of controller
 
-    public Input(){
+    public static void init(){
         /* Controls' assignment*/
-		Input.xbox = new XboxController(0);
-		Input.uDebouncer = new Debouncer(xbox, 0f, 0.25);
-        Input.dDebouncer = new Debouncer(xbox, 180f, 0.25);
+		xbox = new XboxController(0);
+		uDebouncer = new Debouncer(xbox, 0f, 0.25);
+        dDebouncer = new Debouncer(xbox, 180f, 0.25);
+        lDebouncer = new Debouncer(xbox, 90f, 0.25);
+        rDebouncer = new Debouncer(xbox, 270f, 0.25);
         
         /* Sensor assignment *///code matches electrical
-		Input.dEncoderL = new Encoder(4, 5);
-		Input.dEncoderR = new Encoder(2, 3);
-		Input.liftEncoder = new Encoder(6, 7);
-        Input.accel = new BuiltInAccelerometer();
-        Input.gyro = new AnalogGyro(0);
-		Input.sUp = new DigitalInput(1);
-        Input.sDown = new DigitalInput(8);        
+		dEncoderL = new Encoder(4, 5);
+		dEncoderR = new Encoder(2, 3);
+		liftEncoder = new Encoder(6, 7);
+        accel = new BuiltInAccelerometer();
+        gyro = new AnalogGyro(0);
+		sUp = new DigitalInput(1);
+        sDown = new DigitalInput(8);   
     }
 
-    public static void init(){
+    public static void reset(){
         liftEncoder.reset();
 		dEncoderL.reset();
-		dEncoderR.reset();
+        dEncoderR.reset();
+        gyro.initGyro();
+        gyro.reset();
     }
 
     /** deadband ? percent, used on the gamepad */
 	private static double deadband(double value) {
 		double deadzone = 0.15;//smallest amount you can recognize from the controller
-		
-		/* Inside deadband */
 		if ((value >= +deadzone)||(value <= -deadzone)) {
-			return value;
-		}else{/* Outside deadband */
-			return 0;
+			return value;//outside deadband
+		}else{
+			return 0;//inside deadband
 		}
     }
     

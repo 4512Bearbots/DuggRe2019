@@ -4,22 +4,31 @@ import edu.wpi.first.wpilibj.Timer;
 
 public class Autonomous {
 
-	public static double FORWARD;
-	public static double TURN;
-	public static double LIFT;
-	public static double ATIME;
+	public static double forward = 0;
+	public static double turn = 0;
+	public static double lift = 0;
+	public static double aTime;
 	public static String command;
-	
-	public Autonomous(String command) {
-		Autonomous.command = command;
-		Autonomous.ATIME = Timer.getFPGATimestamp();
-		Autonomous.FORWARD = Autonomous.TURN = Autonomous.LIFT = 0;
-		Input.init();
+
+	public static void autoInit() {
+		Input.reset();
 	}
-	
+
 	public static void autoPeriodic() {
+		double angle = (Input.gyro.getAngle()%360);
 		switch(Autonomous.command) {
 		case "Test":
+			if(aSchedule(0,2)){
+				Input.gyro.calibrate();
+			}else{
+				MotorBase.dSpeed = 0.3;
+				double diff = 180 - Math.abs(Math.abs(-angle) - 180);
+				if(diff<10) turn = 0;
+				else if((angle)<(360-angle)){
+
+				}
+			}
+			MotorBase.setDrive(forward, turn);
 			break;
 		default:
 			break;
@@ -27,6 +36,6 @@ public class Autonomous {
 	}
 
 	public static boolean aSchedule(double start, double end) {
-		return (Timer.getFPGATimestamp()>=ATIME+start&&Timer.getFPGATimestamp()<=ATIME+end)?true:false;
+		return (Timer.getFPGATimestamp()>=aTime+start&&Timer.getFPGATimestamp()<=aTime+end)?true:false;
 	}
 }

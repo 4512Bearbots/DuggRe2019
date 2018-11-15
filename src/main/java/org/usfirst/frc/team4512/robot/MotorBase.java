@@ -43,9 +43,10 @@ public class MotorBase{
 	public static int lState;//determine state for executing lift commands
 	public static final int MAXLIFT = 4300;//top of the lift in counts(actual ~4400)
 	    
-    public MotorBase(){        
+    public static void driveInit(){
 		/* Disable motor controllers */
-		setDrive(0, 0);
+		setDrive(0,0);
+		setLift(0);
 		
 		/* Set Neutral mode *///motor behavior
 		dRightF.setNeutralMode(NeutralMode.Brake);
@@ -62,14 +63,9 @@ public class MotorBase{
 		armL.setInverted(false);
 		
 		/* Constant assignment */
-		MotorBase.dSpeed = 0.5;
-		MotorBase.lState = 0;
-    }
-    public static void driveInit(){
-		dForward=dForwardH=dTurn=dgTime=dsTime=luTime=ldTime = 0;
-        setDrive(0,0);
-		setLift(0);
-		Input.init();
+		dSpeed = 0.5;
+		dForward=dForwardH=dTurn=dgTime=dsTime=luTime=ldTime=lState = 0;
+		Input.reset();
 		System.out.println("--Feed Forward Teleop--");
     }
 
@@ -79,42 +75,48 @@ public class MotorBase{
 		
 		/* Lift */ 
 		//stop the lift if bumpers are not pressed
-		if(lState!=1 && lState!=2)lState=0;
+		if(lState!=1 && lState!=2 && lState != 5) lState=0;
 		//check input
 		lState=(Input.getRightBumper())? 3:lState;
 		lState=(Input.getLeftBumper())? 4:lState;
 		//reset if pressing switches
-		if(Input.sDown.get())onDown();//call methods when switches are pressed
-		if(Input.sUp.get())onUp();
+		boolean up = Input.sUp.get();
+		boolean down = Input.sDown.get();
+		if(down) onDown();//call methods when switches are pressed
+		if(up) onUp();
 
 		if(Input.uDebouncer.get()) lState = 1;//pressing d-pad will automatically
 		if(Input.dDebouncer.get()) lState = 2;//move the lift to top or bottom
+		if(Input.lDebouncer.get()||Input.rDebouncer.get()) lState = 5;//move to middle
 
-		lState=(Input.sUp.get()&&(lState==1||lState==3))? 0:lState;
-		lState=(Input.sDown.get()&&(lState==2||lState==4))? 0:lState;
+		lState=(up&&(lState==1||lState==3||lState==5))? 0:lState;
+		lState=(down&&(lState==2||lState==4))? 0:lState;
         
-		double liftPercent = (Input.getLift()/(double)MAXLIFT)-0.025;
-		SmartDashboard.putNumber("LiftPercent", liftPercent);
+		double liftPercent = (Input.getLift()/(double)MAXLIFT)-0.025;//percentage of lift height
+		double mathUp = encoderMath(liftPercent, 1);//speed based on height going up
+		double mathDown = -encoderMath(liftPercent,0.8)*interpolate(0.3,5,liftPercent);//down
+		SmartDashboard.putNumber("LiftPercent", liftPercent);//let me see the math, borther
 		switch(lState) {//different states dictate lift speed
-		case 1://if up d-pad is pressed, automatically go up
-			setLift(encoderMath(liftPercent, 1));
+		case 1://automatic up (d-pad)
+			setLift(mathUp);
 			break;
-		case 2://if down d-pad is pressed, automatically go down
-			setLift(-encoderMath(liftPercent,0.75)*interpolate(0.3,5,liftPercent));
+		case 2://automatic down (d-pad)
+			setLift(mathDown);
 			break;
-		case 3://if right bumper, lift goes up
-			setLift(encoderMath(liftPercent, 1));
+		case 3://manual up (bumper)
+			setLift(mathUp);
 			break;
-		case 4://if left bumper, lift goes down
-			setLift(-encoderMath(liftPercent,0.75)*interpolate(0.3,5,liftPercent));
+		case 4://manual down (bumper)
+			setLift(mathDown);
+			break;
+		case 5://automatic middle (for switch auto)
+			if(liftPercent < 0.4) setLift(mathUp);
 			break;
 		default://keep lift still
-			if(!Input.sDown.get()) {
+			if(!down) {
 				setLift(0.11);//backpressure
 				if(Input.getLift()<500) lState = 2;//if the lift is low, auto push down
-			}else {
-				setLift(0);//dont break things if not suspended
-			}
+			} else setLift(0);//dont break things if not suspended
 			break;
 		}
 		
@@ -131,12 +133,12 @@ public class MotorBase{
 		dSpeed = (Input.getXButton())? 0.3:dSpeed;
 		dSpeed = (Input.getYButton())? 0.5:dSpeed;
 		dSpeed = (Input.getBButton())? 1.0:dSpeed;
-		if(liftPercent>0.4){//slow speed when lift high
+		if(liftPercent>0.4) {//slow speed when lift high
 			dSpeed=interpolate(0.2,0.365,1-liftPercent);
-		}else if(liftPercent<0.4){
+		} else if(liftPercent<0.4) {
 			dSpeed=(dSpeed<0.3)? 0.3:dSpeed;
 		}
-		dSpeed=Math.round(dSpeed*100)/100.0;
+		dSpeed = Math.round(dSpeed*100)/100.0;
 		/* D-Pad debouncers(doesnt activate 3 times per click) */
 		/*if((dSpeed+0.25) < 1 && Input.uDebouncer.get()) {
 			dSpeed = Math.nextUp(dSpeed+0.25);
@@ -155,7 +157,7 @@ public class MotorBase{
 		SmartDashboard.putNumber("LeftY", forward);
 		SmartDashboard.putNumber("RightX", turn);
 		double warmMult = interpolate(.3,.7,dSpeed)*10;
-		if(forward==0){
+		if(forward==0) {
 			dgTime = Timer.getFPGATimestamp();
 			/*
 			if(dForwardH>0){
@@ -164,12 +166,12 @@ public class MotorBase{
 				forward = interpolate(dForwardH,0,(Timer.getFPGATimestamp()-dsTime)*warmMult);
 			}*/
 			forward = interpolate(0,dForwardH,((dsTime+1)-Timer.getFPGATimestamp())*warmMult);
-		}else{
+		} else {
 			dForwardH = forward;
 			dsTime = Timer.getFPGATimestamp();
 			forward *= interpolate(0.1,1,(Timer.getFPGATimestamp()-dgTime)*warmMult);//for the first ~0.5 seconds after first issuing a movement the drivebase is slowed
 		}
-		if(turn==0){
+		if(turn==0) {
 			tgTime = Timer.getFPGATimestamp();
 			/*
 			if(dTurnH > 0){
@@ -178,7 +180,7 @@ public class MotorBase{
 				turn = interpolate(dTurnH,0,(Timer.getFPGATimestamp()-tsTime)*warmMult);
 			}*/
 			turn = interpolate(0,dTurnH,((tsTime+1)-Timer.getFPGATimestamp())*warmMult);
-		}else{
+		} else {
 			dTurnH = turn;
 			tsTime = Timer.getFPGATimestamp();
 			turn *= interpolate(0.1,1,(Timer.getFPGATimestamp()-tgTime)*warmMult);//for the first ~0.5 seconds after first issuing a movement the drivebase is slowed
@@ -195,11 +197,11 @@ public class MotorBase{
 	}
 
 	public static void setLift(double power){
-		if(!Input.sUp.get() && !Input.sDown.get()){
-			if(lState==0){
+		if(!Input.sUp.get() && !Input.sDown.get()) {
+			if(lState==0) {
 				luTime = Timer.getFPGATimestamp();//reference time for starting
 				power = interpolate(power,lHigh,(ldTime+1)-Timer.getFPGATimestamp());	
-			}else{
+			} else {
 				ldTime = Timer.getFPGATimestamp();//reference time for stopping
 				power *= interpolate(0.1,1,(Timer.getFPGATimestamp()-luTime));
 				lHigh = power;//if the lift stops it slows down from this speed(not max)
@@ -225,7 +227,7 @@ public class MotorBase{
 
 	private static double interpolate(double a, double b, double x){//given x as a fraction between a and b
 		double math = a+(x*(b-a));
-		if(a>b){
+		if(a>b) {
 			double hold = a;
 			a = b;
 			b = hold;
@@ -235,7 +237,7 @@ public class MotorBase{
 	}
 
 	private static double limit(double min, double max, double x){//limit
-		return (x>max)?max:Math.max(x,min);
+		return (x>max)? max:Math.max(x,min);
 	}
 
 	//whenever lift switches are pressed, run these methods

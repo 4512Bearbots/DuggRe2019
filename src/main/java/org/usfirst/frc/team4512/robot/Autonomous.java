@@ -22,11 +22,10 @@ public class Autonomous {
 				Input.gyro.calibrate();
 			}else{
 				MotorBase.dSpeed = 0.3;
-				double diff = 180 - Math.abs(Math.abs(-angle) - 180);
+				double diff = 180 - Math.abs(Math.abs(angle) - 180);
 				if(diff<10) turn = 0;
-				else if((angle)<(360-angle)){
-
-				}
+				else turn = (angle<(360-angle))? -diff:diff;
+				turn = (angle<0)? -turn:turn;
 			}
 			MotorBase.setDrive(forward, turn);
 			break;

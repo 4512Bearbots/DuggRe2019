@@ -157,22 +157,34 @@ public class MotorBase{
 		double warmMult = interpolate(.3,.7,dSpeed)*10;
 		if(forward==0){
 			dgTime = Timer.getFPGATimestamp();
+			/*
+			if(dForwardH>0){
+				forward = interpolate(0,dForwardH,((dsTime+1)-Timer.getFPGATimestamp())*warmMult);
+			}else{
+				forward = interpolate(dForwardH,0,(Timer.getFPGATimestamp()-dsTime)*warmMult);
+			}*/
 			forward = interpolate(0,dForwardH,((dsTime+1)-Timer.getFPGATimestamp())*warmMult);
 		}else{
-			dForwardH=forward;
+			dForwardH = forward;
 			dsTime = Timer.getFPGATimestamp();
 			forward *= interpolate(0.1,1,(Timer.getFPGATimestamp()-dgTime)*warmMult);//for the first ~0.5 seconds after first issuing a movement the drivebase is slowed
 		}
 		if(turn==0){
 			tgTime = Timer.getFPGATimestamp();
+			/*
+			if(dTurnH > 0){
+				turn = interpolate(0,dTurnH,((tsTime+1)-Timer.getFPGATimestamp())*warmMult);
+			} else{
+				turn = interpolate(dTurnH,0,(Timer.getFPGATimestamp()-tsTime)*warmMult);
+			}*/
 			turn = interpolate(0,dTurnH,((tsTime+1)-Timer.getFPGATimestamp())*warmMult);
 		}else{
 			dTurnH = turn;
 			tsTime = Timer.getFPGATimestamp();
 			turn *= interpolate(0.1,1,(Timer.getFPGATimestamp()-tgTime)*warmMult);//for the first ~0.5 seconds after first issuing a movement the drivebase is slowed
 		}
-		forward*=dSpeed;
-		turn*=dSpeed;
+		forward *= dSpeed;
+		turn *= dSpeed;
 		SmartDashboard.putNumber("Forward", forward);
 		SmartDashboard.putNumber("Turn", turn);
 		SmartDashboard.putNumber("DMult", warmMult);
@@ -186,7 +198,6 @@ public class MotorBase{
 		if(!Input.sUp.get() && !Input.sDown.get()){
 			if(lState==0){
 				luTime = Timer.getFPGATimestamp();//reference time for starting
-				//power = interpolate(lHigh,power,(Timer.getFPGATimestamp()-ldTime));
 				power = interpolate(power,lHigh,(ldTime+1)-Timer.getFPGATimestamp());	
 			}else{
 				ldTime = Timer.getFPGATimestamp();//reference time for stopping
@@ -219,7 +230,7 @@ public class MotorBase{
 			a = b;
 			b = hold;
 		}
-		math = limit(limit(0,1,a),limit(0,1,b),math);
+		math = limit(limit(-1,1,a),limit(-1,1,b),math);
 		return math;
 	}
 

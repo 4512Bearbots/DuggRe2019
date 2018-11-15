@@ -53,9 +53,9 @@ public class Robot extends IterativeRobot {
 		SmartDashboard.putNumber("MaxLift", MotorBase.MAXLIFT);
 		SmartDashboard.putNumber("TimeTotal", Timer.getFPGATimestamp());
 		SmartDashboard.putNumber("TimeLeft", Timer.getMatchTime());
-		SmartDashboard.putNumber("GyroX", Input.gyro.getX());
-		SmartDashboard.putNumber("GyroY", Input.gyro.getY());
-		SmartDashboard.putNumber("GyroZ", Input.gyro.getZ());
+		SmartDashboard.putNumber("accelX", Input.accel.getX());
+		SmartDashboard.putNumber("accelY", Input.accel.getY());
+		SmartDashboard.putNumber("accelZ", Input.accel.getZ());
 	}
 	
 	@Override

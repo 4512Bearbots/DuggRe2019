@@ -43,6 +43,7 @@ public class MotorBase{
 	public static double dTurn;//value affecting turning in feedforward
 	public static double dTurnH;//last non-zero TURN value
 	public static double dTurnL;
+	public static double k;//value affecting the slew of acceleration
 	public static int lState;//determine state for executing lift commands
 	public static final int MAXLIFT = 4300;//top of the lift in counts(actual ~4400)
 	    
@@ -67,6 +68,7 @@ public class MotorBase{
 		
 		/* Constant assignment */
 		dSpeed = 0.5;
+		k = 0.03;
 		dForward=dForwardH=dTurn=dgTime=dsTime=luTime=ldTime=lState = 0;
 		Input.reset();
 		System.out.println("--Feed Forward Teleop--");
@@ -165,8 +167,7 @@ public class MotorBase{
 	/* Basic Arcade Drive using PercentOutput along with Arbitrary FeedForward supplied by turn */
 		//given a forward value and a turn value, will automatically do all the math and appropriately send signals
 	public static void setDrive(double forward, double turn){
-		SmartDashboard.putNumber("LeftY", forward);
-		SmartDashboard.putNumber("RightX", turn);
+		/*
 		double warmMult = interpolate(.4,.8,dSpeed)*10;
 		if(forward==0) {
 			dgTime = Timer.getFPGATimestamp();
@@ -193,12 +194,16 @@ public class MotorBase{
 			turn = interpolate(dTurnL,turn,(Timer.getFPGATimestamp()-tgTime)*warmMult);//for the first ~0.5 seconds after first issuing a movement the drivebase is slowed
 			turn = limit(-1,1,turn);
 			dTurnH = turn;
-		}
+		}*/
+		forward = k*forward + (1-k)*dForwardH;
+		dForwardH = forward;
 		forward *= dSpeed;
+		turn = k*turn + (1-k)*dTurnH;
+		dTurnH = turn;
 		turn *= dSpeed;
 		SmartDashboard.putNumber("Forward", forward);
 		SmartDashboard.putNumber("Turn", turn);
-		SmartDashboard.putNumber("DMult", warmMult);
+		//SmartDashboard.putNumber("DMult", warmMult);
 		dRightF.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, turn);
 		dRightB.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, turn);
 		dLeftF.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, -turn);
@@ -206,6 +211,7 @@ public class MotorBase{
 	}
 
 	public static void setLift(double power){
+		/*
 		if(!Input.sUp.get() && !Input.sDown.get()) {
 			if(lState==0) {
 				luTime = Timer.getFPGATimestamp();//reference time for starting
@@ -219,7 +225,11 @@ public class MotorBase{
 				lHigh = power;//if the lift stops it slows down from this speed(not max)
 			}
 		}
-		power = Math.round(power*1000)/1000.0;
+		power = Math.round(power*1000)/1000.0;*/
+
+		//motor_value = k*joystick_reading + (1-k)*motor_value
+		power = k*power + (1-k)*dForwardH;
+		dForwardH = power;
 		SmartDashboard.putNumber("LiftSpeed", power);
 		liftF.set(power);
 		liftB.set(power);

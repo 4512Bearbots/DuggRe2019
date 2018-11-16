@@ -50,8 +50,7 @@ public class Robot extends IterativeRobot {
 		SmartDashboard.putNumber("accelY", Input.accel.getY());
 		SmartDashboard.putNumber("accelZ", Input.accel.getZ());
 		SmartDashboard.putNumber("Gyro", Input.gyro.getAngle());
-		SmartDashboard.putNumber("GyroC", Input.gyro.getCenter());
-		SmartDashboard.putNumber("GyroO", Input.gyro.getOffset());
+		SmartDashboard.putNumber("GyroR", Input.gyro.getRate());
 	}
 	
 	@Override

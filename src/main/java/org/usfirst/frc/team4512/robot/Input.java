@@ -5,13 +5,14 @@ import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.GenericHID.Hand;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.AnalogGyro;
+import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 import edu.wpi.first.wpilibj.BuiltInAccelerometer;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Encoder;
 public class Input{
     /* Sensors */
     public static BuiltInAccelerometer accel;
-    public static AnalogGyro gyro;
+    public static ADXRS450_Gyro gyro;
 	public static DigitalInput sUp;
     public static DigitalInput sDown;
     public static Encoder dEncoderL;
@@ -40,7 +41,7 @@ public class Input{
 		dEncoderR = new Encoder(2, 3);
 		liftEncoder = new Encoder(6, 7);
         accel = new BuiltInAccelerometer();
-        gyro = new AnalogGyro(0);
+        gyro = new ADXRS450_Gyro();
 		sUp = new DigitalInput(1);
         sDown = new DigitalInput(8);   
     }
@@ -49,7 +50,6 @@ public class Input{
         liftEncoder.reset();
 		dEncoderL.reset();
         dEncoderR.reset();
-        gyro.initGyro();
         gyro.reset();
     }
 

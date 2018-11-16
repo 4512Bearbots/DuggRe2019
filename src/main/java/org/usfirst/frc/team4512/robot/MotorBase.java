@@ -35,11 +35,14 @@ public class MotorBase{
 	public static double tsTime;
 	public static double luTime;//warming for lift - up
 	public static double ldTime;//down
-	public static double lHigh;//last non-zero lift power 
+	public static double lHigh;//last non-zero lift power
+	public static double lLow;
 	public static double dForward;//value affecting forward speed in feedforward
 	public static double dForwardH;//last non-zero FORWARD value
+	public static double dForwardL;
 	public static double dTurn;//value affecting turning in feedforward
 	public static double dTurnH;//last non-zero TURN value
+	public static double dTurnL;
 	public static int lState;//determine state for executing lift commands
 	public static final int MAXLIFT = 4300;//top of the lift in counts(actual ~4400)
 	    
@@ -76,12 +79,19 @@ public class MotorBase{
 		/* Lift */ 
 		//stop the lift if bumpers are not pressed
 		if(lState!=1 && lState!=2 && lState != 5) lState=0;
-		//check input
-		lState=(Input.getRightBumper())? 3:lState;
-		lState=(Input.getLeftBumper())? 4:lState;
-		//reset if pressing switches
+
 		boolean up = Input.sUp.get();
 		boolean down = Input.sDown.get();
+		boolean rightB = Input.getRightBumper();
+		boolean leftB = Input.getLeftBumper();
+
+		//check input
+		lState=(rightB)? 3:lState;
+		lState=(leftB)? 4:lState;
+		if(rightB && leftB) lState = 0;
+		else if(rightB) lState = 3;
+		else if(leftB) lState = 4;
+		//reset if pressing switches
 		if(down) onDown();//call methods when switches are pressed
 		if(up) onUp();
 
@@ -110,12 +120,13 @@ public class MotorBase{
 			setLift(mathDown);
 			break;
 		case 5://automatic middle (for switch auto)
-			if(liftPercent < 0.4) setLift(mathUp);
+			if(liftPercent < 0.25) setLift(mathUp);
+			else lState = 0;
 			break;
 		default://keep lift still
 			if(!down) {
 				setLift(0.11);//backpressure
-				if(Input.getLift()<500) lState = 2;//if the lift is low, auto push down
+				if(liftPercent < 0.15) lState = 2;//if the lift is low, auto push down
 			} else setLift(0);//dont break things if not suspended
 			break;
 		}
@@ -156,34 +167,32 @@ public class MotorBase{
 	public static void setDrive(double forward, double turn){
 		SmartDashboard.putNumber("LeftY", forward);
 		SmartDashboard.putNumber("RightX", turn);
-		double warmMult = interpolate(.3,.7,dSpeed)*10;
+		double warmMult = interpolate(.4,.8,dSpeed)*10;
 		if(forward==0) {
 			dgTime = Timer.getFPGATimestamp();
-			/*
-			if(dForwardH>0){
-				forward = interpolate(0,dForwardH,((dsTime+1)-Timer.getFPGATimestamp())*warmMult);
-			}else{
-				forward = interpolate(dForwardH,0,(Timer.getFPGATimestamp()-dsTime)*warmMult);
-			}*/
-			forward = interpolate(0,dForwardH,((dsTime+1)-Timer.getFPGATimestamp())*warmMult);
+			//if(dForwardH>0) forward = interpolate(0,dForwardH,((dsTime+1)-Timer.getFPGATimestamp())*warmMult);
+			//else forward = interpolate(dForwardH,0,(Timer.getFPGATimestamp()-dsTime)*warmMult);
+			forward = interpolate(forward,dForwardH,((dsTime+1)-Timer.getFPGATimestamp())*warmMult);
+			forward = limit(-1,1,forward);
+			dForwardL = forward;
 		} else {
-			dForwardH = forward;
 			dsTime = Timer.getFPGATimestamp();
-			forward *= interpolate(0.1,1,(Timer.getFPGATimestamp()-dgTime)*warmMult);//for the first ~0.5 seconds after first issuing a movement the drivebase is slowed
+			forward = interpolate(dForwardL,forward,(Timer.getFPGATimestamp()-dgTime)*warmMult);//for the first ~0.5 seconds after first issuing a movement the drivebase is slowed
+			forward = limit(-1,1,forward);
+			dForwardH = forward;
 		}
 		if(turn==0) {
 			tgTime = Timer.getFPGATimestamp();
-			/*
-			if(dTurnH > 0){
-				turn = interpolate(0,dTurnH,((tsTime+1)-Timer.getFPGATimestamp())*warmMult);
-			} else{
-				turn = interpolate(dTurnH,0,(Timer.getFPGATimestamp()-tsTime)*warmMult);
-			}*/
-			turn = interpolate(0,dTurnH,((tsTime+1)-Timer.getFPGATimestamp())*warmMult);
+			//if(dTurnH > 0) turn = interpolate(0,dTurnH,((tsTime+1)-Timer.getFPGATimestamp())*warmMult);
+			//else turn = interpolate(dTurnH,0,(Timer.getFPGATimestamp()-tsTime)*warmMult);
+			turn = interpolate(turn,dTurnH,((tsTime+1)-Timer.getFPGATimestamp())*warmMult);
+			turn = limit(-1,1,turn);
+			dTurnL = turn;
 		} else {
-			dTurnH = turn;
 			tsTime = Timer.getFPGATimestamp();
-			turn *= interpolate(0.1,1,(Timer.getFPGATimestamp()-tgTime)*warmMult);//for the first ~0.5 seconds after first issuing a movement the drivebase is slowed
+			turn = interpolate(dTurnL,turn,(Timer.getFPGATimestamp()-tgTime)*warmMult);//for the first ~0.5 seconds after first issuing a movement the drivebase is slowed
+			turn = limit(-1,1,turn);
+			dTurnH = turn;
 		}
 		forward *= dSpeed;
 		turn *= dSpeed;
@@ -200,10 +209,13 @@ public class MotorBase{
 		if(!Input.sUp.get() && !Input.sDown.get()) {
 			if(lState==0) {
 				luTime = Timer.getFPGATimestamp();//reference time for starting
-				power = interpolate(power,lHigh,(ldTime+1)-Timer.getFPGATimestamp());	
+				power = interpolate(power,lHigh,((ldTime+1)-Timer.getFPGATimestamp())*3);
+				power = limit(-1,1,power);
+				lLow = power;
 			} else {
 				ldTime = Timer.getFPGATimestamp();//reference time for stopping
-				power *= interpolate(0.1,1,(Timer.getFPGATimestamp()-luTime));
+				power = interpolate(lLow,power,(Timer.getFPGATimestamp()-luTime));
+				power = limit(-1,1,power);
 				lHigh = power;//if the lift stops it slows down from this speed(not max)
 			}
 		}

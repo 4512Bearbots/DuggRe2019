@@ -18,7 +18,7 @@ public class Autonomous {
 		double angle = (Input.gyro.getAngle()%360);
 		switch(Autonomous.command) {
 		case "Test":
-			if(aSchedule(0,2)){
+			if(aSchedule(0,1)){
 				Input.gyro.calibrate();
 			}else{
 				MotorBase.dSpeed = 0.3;

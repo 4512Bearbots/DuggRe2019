@@ -228,8 +228,8 @@ public class MotorBase{
 		power = Math.round(power*1000)/1000.0;*/
 
 		//motor_value = k*joystick_reading + (1-k)*motor_value
-		power = k*power + (1-k)*dForwardH;
-		dForwardH = power;
+		power = k*power + (1-k)*lHigh;
+		lHigh = power;
 		SmartDashboard.putNumber("LiftSpeed", power);
 		liftF.set(power);
 		liftB.set(power);

@@ -18,15 +18,11 @@ public class Autonomous {
 		double angle = (Input.gyro.getAngle()%360);
 		switch(Autonomous.command) {
 		case "Test":
-			if(aSchedule(0,1)){
-				Input.gyro.calibrate();
-			}else{
-				MotorBase.dSpeed = 0.3;
-				double diff = 180 - Math.abs(Math.abs(angle) - 180);
-				if(diff<10) turn = 0;
-				else turn = (angle<(360-angle))? -diff:diff;
-				turn = (angle<0)? -turn:turn;
-			}
+			MotorBase.dSpeed = 0.3;
+			double diff = 180 - Math.abs(Math.abs(angle) - 180);
+			if(diff<10) turn = 0;
+			else turn = (angle<(360-angle))? -diff:diff;
+			turn = (angle<0)? -turn:turn;
 			MotorBase.setDrive(forward, turn);
 			break;
 		default:

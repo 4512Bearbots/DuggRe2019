@@ -59,16 +59,16 @@ public class MotorBase{
 		dLeftB.setNeutralMode(NeutralMode.Brake);
 
 		/* Configure output direction */
-		dRightF.setInverted(false);
-		dRightB.setInverted(false);
-		dLeftF.setInverted(true);
-		dLeftB.setInverted(true);
+		dRightF.setInverted(true);
+		dRightB.setInverted(true);
+		dLeftF.setInverted(false);
+		dLeftB.setInverted(false);
 		armR.setInverted(true);
 		armL.setInverted(false);
 		
 		/* Constant assignment */
 		dSpeed = 0.5;
-		k = 0.03;
+		k = 0.3;
 		dForward=dForwardH=dTurn=dgTime=dsTime=luTime=ldTime=lState = 0;
 		Input.reset();
 		System.out.println("--Feed Forward Teleop--");

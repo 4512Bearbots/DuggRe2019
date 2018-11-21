@@ -29,6 +29,7 @@ public class Robot extends IterativeRobot {
 
 		/* Controls */
 		Input.init();
+		Input.gyro.calibrate();
 	}
 	
 	@Override

@@ -33,8 +33,8 @@ public class MotorBase{
 	public static double dsTime;//stopped
 	public static double tgTime;//same for turn
 	public static double tsTime;
-	public static double luTime;//warming for lift - up
-	public static double ldTime;//down
+	public static double lgTime;//warming for lift - up
+	public static double lsTime;//down
 	public static double lHigh;//last non-zero lift power
 	public static double lLow;
 	public static double dForward;//value affecting forward speed in feedforward
@@ -67,7 +67,7 @@ public class MotorBase{
 		
 		/* Constant assignment */
 		dSpeed = 0.5;
-		dForward=dForwardH=dTurn=dgTime=dsTime=luTime=ldTime=lState = 0;
+		dForward=dForwardH=dTurn=dgTime=dsTime=lgTime=lsTime=lState = 0;
 		Input.reset();
 		System.out.println("--Feed Forward Teleop--");
     }
@@ -165,19 +165,19 @@ public class MotorBase{
 	/* Basic Arcade Drive using PercentOutput along with Arbitrary FeedForward supplied by turn */
 		//given a forward value and a turn value, will automatically do all the math and appropriately send signals
 	public static void setDrive(double forward, double turn){
-		SmartDashboard.putNumber("LeftY", forward);
-		SmartDashboard.putNumber("RightX", turn);
-		double warmMult = interpolate(.4,.8,dSpeed)*10;
+		double warmMult = interpolate(.2,.3,dSpeed)*10;
 		if(forward==0) {
 			dgTime = Timer.getFPGATimestamp();
 			//if(dForwardH>0) forward = interpolate(0,dForwardH,((dsTime+1)-Timer.getFPGATimestamp())*warmMult);
 			//else forward = interpolate(dForwardH,0,(Timer.getFPGATimestamp()-dsTime)*warmMult);
-			forward = interpolate(forward,dForwardH,((dsTime+1)-Timer.getFPGATimestamp())*warmMult);
+			double time = ((dsTime+(1/warmMult))-Timer.getFPGATimestamp())*warmMult;
+			forward = interpolate(forward,dForwardH,time);
 			forward = limit(-1,1,forward);
 			dForwardL = forward;
 		} else {
 			dsTime = Timer.getFPGATimestamp();
-			forward = interpolate(dForwardL,forward,(Timer.getFPGATimestamp()-dgTime)*warmMult);//for the first ~0.5 seconds after first issuing a movement the drivebase is slowed
+			double time = (Timer.getFPGATimestamp()-dgTime)*warmMult;
+			forward = interpolate(dForwardL,forward,time);//for the first ~0.5 seconds after first issuing a movement the drivebase is slowed
 			forward = limit(-1,1,forward);
 			dForwardH = forward;
 		}
@@ -185,12 +185,14 @@ public class MotorBase{
 			tgTime = Timer.getFPGATimestamp();
 			//if(dTurnH > 0) turn = interpolate(0,dTurnH,((tsTime+1)-Timer.getFPGATimestamp())*warmMult);
 			//else turn = interpolate(dTurnH,0,(Timer.getFPGATimestamp()-tsTime)*warmMult);
-			turn = interpolate(turn,dTurnH,((tsTime+1)-Timer.getFPGATimestamp())*warmMult);
+			double time = ((tsTime+(1/warmMult))-Timer.getFPGATimestamp())*warmMult;
+			turn = interpolate(turn,dTurnH,time);
 			turn = limit(-1,1,turn);
 			dTurnL = turn;
 		} else {
 			tsTime = Timer.getFPGATimestamp();
-			turn = interpolate(dTurnL,turn,(Timer.getFPGATimestamp()-tgTime)*warmMult);//for the first ~0.5 seconds after first issuing a movement the drivebase is slowed
+			double time = (Timer.getFPGATimestamp()-tgTime)*warmMult;
+			turn = interpolate(dTurnL,turn,time);//for the first ~0.5 seconds after first issuing a movement the drivebase is slowed
 			turn = limit(-1,1,turn);
 			dTurnH = turn;
 		}
@@ -206,15 +208,18 @@ public class MotorBase{
 	}
 
 	public static void setLift(double power){
+		double warmMult = 2;
 		if(!Input.sUp.get() && !Input.sDown.get()) {
 			if(lState==0) {
-				luTime = Timer.getFPGATimestamp();//reference time for starting
-				power = interpolate(power,lHigh,((ldTime+1)-Timer.getFPGATimestamp())*3);
+				lgTime = Timer.getFPGATimestamp();//reference time for starting
+				double time = ((lsTime+(1/warmMult))-Timer.getFPGATimestamp())*warmMult;
+				power = interpolate(power,lHigh,time);
 				power = limit(-1,1,power);
 				lLow = power;
 			} else {
-				ldTime = Timer.getFPGATimestamp();//reference time for stopping
-				power = interpolate(lLow,power,(Timer.getFPGATimestamp()-luTime));
+				lsTime = Timer.getFPGATimestamp();//reference time for stopping
+				double time = (Timer.getFPGATimestamp()-lgTime)*warmMult;
+				power = interpolate(lLow,power,time);
 				power = limit(-1,1,power);
 				lHigh = power;//if the lift stops it slows down from this speed(not max)
 			}

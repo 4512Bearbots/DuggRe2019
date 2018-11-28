@@ -66,7 +66,7 @@ public class MotorBase{
 		armL.setInverted(false);
 		
 		/* Constant assignment */
-		dSpeed = 0.5;
+		dSpeed = 0.3;
 		dForward=dForwardH=dTurn=dgTime=dsTime=lgTime=lsTime=lState = 0;
 		Input.reset();
 		System.out.println("--Feed Forward Teleop--");
@@ -120,7 +120,7 @@ public class MotorBase{
 			setLift(mathDown);
 			break;
 		case 5://automatic middle (for switch auto)
-			if(liftPercent < 0.25) setLift(mathUp);
+			if(liftPercent < 0.16) setLift(mathUp);
 			else lState = 0;
 			break;
 		default://keep lift still
@@ -141,7 +141,7 @@ public class MotorBase{
 		/* Drive <-> Lift */
 		//change speed if buttons are pressed
 		//dSpeed=(Input.getAButton())?0.2:dSpeed;
-		dSpeed = (Input.getXButton())? 0.3:dSpeed;
+		dSpeed = (Input.getXButton()||Input.getAButton())? 0.3:dSpeed;
 		dSpeed = (Input.getYButton())? 0.5:dSpeed;
 		dSpeed = (Input.getBButton())? 1.0:dSpeed;
 		if(liftPercent>0.4) {//slow speed when lift high

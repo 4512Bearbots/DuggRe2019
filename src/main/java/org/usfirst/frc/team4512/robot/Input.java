@@ -5,7 +5,6 @@ import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.GenericHID.Hand;
 import edu.wpi.first.wpilibj.SPI.Port;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj.AnalogGyro;
 import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 import edu.wpi.first.wpilibj.BuiltInAccelerometer;
 import edu.wpi.first.wpilibj.DigitalInput;
@@ -64,6 +63,14 @@ public class Input{
 		}
     }
     
+    public static double getAngleRate(){
+        return gyro.getRate();
+    }
+    public static double getAngle(){
+        double get = gyro.getAngle();
+        get = (get<0)? 360+get:((get>360)? get-360:get);//constrain values to 0-360
+        return get;
+    }
     public static double getLeftY(){
         double joy = -deadband(xbox.getY(KLEFT));
         SmartDashboard.putNumber("LJoyY", joy);

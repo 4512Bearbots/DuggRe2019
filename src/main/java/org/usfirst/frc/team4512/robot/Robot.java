@@ -34,8 +34,6 @@ public class Robot extends IterativeRobot {
 	
 	@Override
 	public void robotPeriodic() {//this command is like auto or teleop periodic, but is ran regardless of mode, even disabled(after other periodics)
-		SmartDashboard.putNumber("LeftY", Input.getLeftY());
-		SmartDashboard.putNumber("RightX", Input.getRightX());
 		SmartDashboard.putBoolean("Top", Input.sUp.get());
 		SmartDashboard.putBoolean("Down", Input.sDown.get());
 		SmartDashboard.putNumber("DriveSpeed", MotorBase.dSpeed);
@@ -52,19 +50,21 @@ public class Robot extends IterativeRobot {
 		SmartDashboard.putNumber("accelX", Input.accel.getX());
 		SmartDashboard.putNumber("accelY", Input.accel.getY());
 		SmartDashboard.putNumber("accelZ", Input.accel.getZ());
-		SmartDashboard.putNumber("Gyro", Input.gyro.getAngle());
-		SmartDashboard.putNumber("GyroR", Input.gyro.getRate());
+		SmartDashboard.putNumber("Gyro", Input.getAngle());
+		SmartDashboard.putNumber("GyroR", Input.getAngleRate());
 	}
 	
 	@Override
 	public void autonomousInit() {//runs upon auto startup
-		Autonomous.command = autoChoose.getSelected();
 		Autonomous.aTime = Timer.getFPGATimestamp();
+		Input.gyro.calibrate();
 		Autonomous.autoInit();
+		MotorBase.driveInit();
 	}
 	
 	@Override
 	public void autonomousPeriodic() {//iteratively run while auto is active
+		Autonomous.command = autoChoose.getSelected();
 		Autonomous.autoPeriodic();
 	}
 	

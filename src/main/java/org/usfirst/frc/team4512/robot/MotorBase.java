@@ -43,7 +43,8 @@ public class MotorBase{
 	public static double dTurn;//value affecting turning in feedforward
 	public static double dTurnH;//last non-zero TURN value
 	public static double dTurnL;
-	public static double k;//value affecting the slew of acceleration
+	public static double driveK;//value affecting the slew of acceleration
+	public static double liftK;//for lift
 	public static int lState;//determine state for executing lift commands
 	public static final int MAXLIFT = 4300;//top of the lift in counts(actual ~4400)
 	    
@@ -67,8 +68,9 @@ public class MotorBase{
 		armL.setInverted(false);
 		
 		/* Constant assignment */
-		dSpeed = 0.5;
-		k = 0.3;
+		dSpeed = 0.3;
+		driveK = 0.2;
+		liftK=0.075;
 		dForward=dForwardH=dTurn=dgTime=dsTime=luTime=ldTime=lState = 0;
 		Input.reset();
 		System.out.println("--Feed Forward Teleop--");
@@ -106,6 +108,7 @@ public class MotorBase{
         
 		double liftPercent = (Input.getLift()/(double)MAXLIFT)-0.025;//percentage of lift height
 		double mathUp = encoderMath(liftPercent, 1);//speed based on height going up
+		liftK=0.1+((1-mathUp)/3);
 		double mathDown = -encoderMath(liftPercent,0.8)*interpolate(0.3,5,liftPercent);//down
 		SmartDashboard.putNumber("LiftPercent", liftPercent);//let me see the math, borther
 		switch(lState) {//different states dictate lift speed
@@ -122,7 +125,8 @@ public class MotorBase{
 			setLift(mathDown);
 			break;
 		case 5://automatic middle (for switch auto)
-			if(liftPercent < 0.25) setLift(mathUp);
+			if(liftPercent < 0.15) setLift(mathUp*0.7);
+			else if(liftPercent > 0.25) setLift(mathDown*0.6);
 			else lState = 0;
 			break;
 		default://keep lift still
@@ -143,7 +147,7 @@ public class MotorBase{
 		/* Drive <-> Lift */
 		//change speed if buttons are pressed
 		//dSpeed=(Input.getAButton())?0.2:dSpeed;
-		dSpeed = (Input.getXButton())? 0.3:dSpeed;
+		dSpeed = (Input.getXButton()||Input.getAButton())? 0.3:dSpeed;
 		dSpeed = (Input.getYButton())? 0.5:dSpeed;
 		dSpeed = (Input.getBButton())? 1.0:dSpeed;
 		if(liftPercent>0.4) {//slow speed when lift high
@@ -152,83 +156,29 @@ public class MotorBase{
 			dSpeed=(dSpeed<0.3)? 0.3:dSpeed;
 		}
 		dSpeed = Math.round(dSpeed*100)/100.0;
-		/* D-Pad debouncers(doesnt activate 3 times per click) */
-		/*if((dSpeed+0.25) < 1 && Input.uDebouncer.get()) {
-			dSpeed = Math.nextUp(dSpeed+0.25);
-			//System.out.println("dSpeed: "+dSpeed);
-		}
-		else if((dSpeed-0.25) > 0 && Input.dDebouncer.get()) {
-			dSpeed = Math.nextDown(dSpeed-0.25);
-			//System.out.println("dSpeed: "+dSpeed);
-		}*/
     }
 
 	
 	/* Basic Arcade Drive using PercentOutput along with Arbitrary FeedForward supplied by turn */
 		//given a forward value and a turn value, will automatically do all the math and appropriately send signals
 	public static void setDrive(double forward, double turn){
-		/*
-		double warmMult = interpolate(.4,.8,dSpeed)*10;
-		if(forward==0) {
-			dgTime = Timer.getFPGATimestamp();
-			//if(dForwardH>0) forward = interpolate(0,dForwardH,((dsTime+1)-Timer.getFPGATimestamp())*warmMult);
-			//else forward = interpolate(dForwardH,0,(Timer.getFPGATimestamp()-dsTime)*warmMult);
-			forward = interpolate(forward,dForwardH,((dsTime+1)-Timer.getFPGATimestamp())*warmMult);
-			forward = limit(-1,1,forward);
-			dForwardL = forward;
-		} else {
-			dsTime = Timer.getFPGATimestamp();
-			forward = interpolate(dForwardL,forward,(Timer.getFPGATimestamp()-dgTime)*warmMult);//for the first ~0.5 seconds after first issuing a movement the drivebase is slowed
-			forward = limit(-1,1,forward);
-			dForwardH = forward;
-		}
-		if(turn==0) {
-			tgTime = Timer.getFPGATimestamp();
-			//if(dTurnH > 0) turn = interpolate(0,dTurnH,((tsTime+1)-Timer.getFPGATimestamp())*warmMult);
-			//else turn = interpolate(dTurnH,0,(Timer.getFPGATimestamp()-tsTime)*warmMult);
-			turn = interpolate(turn,dTurnH,((tsTime+1)-Timer.getFPGATimestamp())*warmMult);
-			turn = limit(-1,1,turn);
-			dTurnL = turn;
-		} else {
-			tsTime = Timer.getFPGATimestamp();
-			turn = interpolate(dTurnL,turn,(Timer.getFPGATimestamp()-tgTime)*warmMult);//for the first ~0.5 seconds after first issuing a movement the drivebase is slowed
-			turn = limit(-1,1,turn);
-			dTurnH = turn;
-		}*/
-		forward = k*forward + (1-k)*dForwardH;
+		forward = driveK*forward + (1-driveK)*dForwardH;
 		dForwardH = forward;
 		forward *= dSpeed;
-		turn = k*turn + (1-k)*dTurnH;
+		turn = driveK*turn + (1-driveK)*dTurnH;
 		dTurnH = turn;
 		turn *= dSpeed;
 		SmartDashboard.putNumber("Forward", forward);
 		SmartDashboard.putNumber("Turn", turn);
-		//SmartDashboard.putNumber("DMult", warmMult);
-		dRightF.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, turn);
-		dRightB.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, turn);
-		dLeftF.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, -turn);
-		dLeftB.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, -turn);
+		dRightF.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, -turn);
+		dRightB.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, -turn);
+		dLeftF.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, turn);
+		dLeftB.set(ControlMode.PercentOutput, forward, DemandType.ArbitraryFeedForward, turn);
 	}
 
 	public static void setLift(double power){
-		/*
-		if(!Input.sUp.get() && !Input.sDown.get()) {
-			if(lState==0) {
-				luTime = Timer.getFPGATimestamp();//reference time for starting
-				power = interpolate(power,lHigh,((ldTime+1)-Timer.getFPGATimestamp())*3);
-				power = limit(-1,1,power);
-				lLow = power;
-			} else {
-				ldTime = Timer.getFPGATimestamp();//reference time for stopping
-				power = interpolate(lLow,power,(Timer.getFPGATimestamp()-luTime));
-				power = limit(-1,1,power);
-				lHigh = power;//if the lift stops it slows down from this speed(not max)
-			}
-		}
-		power = Math.round(power*1000)/1000.0;*/
-
-		//motor_value = k*joystick_reading + (1-k)*motor_value
-		power = k*power + (1-k)*lHigh;
+		//motor_value = constant*joystick_reading + (1-constant)*motor_value --constrain the acceleration (constant = slew)
+		power = liftK*power + (1-liftK)*lHigh;
 		lHigh = power;
 		SmartDashboard.putNumber("LiftSpeed", power);
 		liftF.set(power);

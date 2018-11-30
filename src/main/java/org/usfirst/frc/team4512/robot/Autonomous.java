@@ -1,6 +1,7 @@
 package org.usfirst.frc.team4512.robot;
 
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class Autonomous {
 
@@ -15,14 +16,21 @@ public class Autonomous {
 	}
 
 	public static void autoPeriodic() {
-		double angle = (Input.gyro.getAngle()%360);
+		double angle = (Input.getAngle());
 		switch(Autonomous.command) {
-		case "Test":
-			MotorBase.dSpeed = 0.3;
-			double diff = 180 - Math.abs(Math.abs(angle) - 180);
-			if(diff<10) turn = 0;
-			else turn = (angle<(360-angle))? -diff:diff;
-			turn = (angle<0)? -turn:turn;
+		case "test":
+			double diff = 180 - Math.abs(angle - 180);
+			SmartDashboard.putNumber("AutoDiff", diff);
+			if(diff<15) turn = 0;
+			else {
+				if(diff<180){
+					turn = (0.3*(-diff/180)-0.5);
+				} else {
+					turn = (0.3*(diff/180)+0.5);
+				}
+			}
+			if(Input.getRightX()!=0) turn = Input.getRightX();
+			SmartDashboard.putNumber("AutoTurn", turn);
 			MotorBase.setDrive(forward, turn);
 			break;
 		default:

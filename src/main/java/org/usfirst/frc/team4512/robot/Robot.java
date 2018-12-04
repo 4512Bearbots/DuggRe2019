@@ -58,8 +58,8 @@ public class Robot extends IterativeRobot {
 	public void autonomousInit() {//runs upon auto startup
 		Autonomous.aTime = Timer.getFPGATimestamp();
 		Input.gyro.calibrate();
-		Autonomous.autoInit();
 		MotorBase.driveInit();
+		Autonomous.autoInit();
 	}
 	
 	@Override

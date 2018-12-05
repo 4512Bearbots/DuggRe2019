@@ -62,14 +62,21 @@ public class Input{
 			return 0;//inside deadband
 		}
     }
+
+    public static double constrainAngle(double x){
+        while(x<0){//constrain angles 0 - 360
+            x += 360;
+        } if(x>360){
+            x = x % 360;
+        }
+        return x;
+    }
     
     public static double getAngleRate(){
         return gyro.getRate();
     }
     public static double getAngle(){
-        double get = gyro.getAngle();
-        get = (get<0)? 360+get:((get>360)? get-360:get);//constrain values to 0-360
-        return get;
+        return constrainAngle(gyro.getAngle());
     }
     public static double getLeftY(){
         double joy = -deadband(xbox.getY(KLEFT));

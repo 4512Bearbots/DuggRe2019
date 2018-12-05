@@ -11,32 +11,21 @@ public class Autonomous {
 	public static double turn = 0;
 	public static double lift = 0;
 	public static double aTime;
+	public static double last = 0;
 	public static String command;
 
 	public static void autoInit() {
-		Input.reset();
 		MotorBase.dLeftF.setNeutralMode(NeutralMode.Coast);
 		MotorBase.dLeftB.setNeutralMode(NeutralMode.Coast);
 		MotorBase.dRightF.setNeutralMode(NeutralMode.Coast);
 		MotorBase.dRightB.setNeutralMode(NeutralMode.Coast);
+		aTime = Timer.getFPGATimestamp();
 	}
 
 	public static void autoPeriodic() {
-		double angle = (Input.getAngle());
 		switch(Autonomous.command) {
 		case "test":
-			double diff = 180 - Math.abs(angle - 180);
-			SmartDashboard.putNumber("AutoDiff", diff);
-			if(diff<15) turn = 0;
-			else {
-				if(diff<180){
-					turn = (0.3*(-diff/180)-0.5);
-				} else {
-					turn = (0.3*(diff/180)+0.5);
-				}
-			}
-			SmartDashboard.putNumber("AutoTurn", turn);
-			MotorBase.setArms(turn);
+			testAuto(0);
 			break;
 		default:
 			break;
@@ -44,6 +33,33 @@ public class Autonomous {
 	}
 
 	public static boolean aSchedule(double start, double end) {
-		return (Timer.getFPGATimestamp()>=aTime+start&&Timer.getFPGATimestamp()<=aTime+end)?true:false;
+		return (Timer.getFPGATimestamp()>=start && Timer.getFPGATimestamp()<=end)?true:false;
+	}
+
+	public static void testAuto(double heading){
+		heading = Input.constrainAngle(heading+180);
+		double angle = (Input.getAngle());
+		double diff = 180 - Math.abs(angle - heading);
+		diff = Input.constrainAngle(diff);
+		SmartDashboard.putNumber("AutoDiff", diff);
+		if(diff<3) {
+			turn = 0;
+			last = Timer.getFPGATimestamp();
+			MotorBase.setArms(0);
+		} else {
+			if(aSchedule(last, last+2)){
+				MotorBase.setArms(1);
+			} else {
+				MotorBase.setArms(0);
+				if(angle<180){
+					turn = (0.4*(-diff/180)-0.6);
+				} else {
+					turn = (0.4*(diff/180)+0.6);
+				}
+			}
+			
+		}
+		SmartDashboard.putNumber("AutoTurn", turn);
+		MotorBase.setDrive(forward, turn);
 	}
 }

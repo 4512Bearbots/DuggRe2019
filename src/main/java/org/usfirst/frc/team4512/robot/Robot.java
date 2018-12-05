@@ -56,15 +56,13 @@ public class Robot extends IterativeRobot {
 	
 	@Override
 	public void autonomousInit() {//runs upon auto startup
-		Autonomous.aTime = Timer.getFPGATimestamp();
-		Input.gyro.calibrate();
 		MotorBase.driveInit();
 		Autonomous.autoInit();
+		Autonomous.command = autoChoose.getSelected();
 	}
 	
 	@Override
 	public void autonomousPeriodic() {//iteratively run while auto is active
-		Autonomous.command = autoChoose.getSelected();
 		Autonomous.autoPeriodic();
 	}
 	

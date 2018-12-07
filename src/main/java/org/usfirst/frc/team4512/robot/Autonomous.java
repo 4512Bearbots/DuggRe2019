@@ -25,9 +25,15 @@ public class Autonomous {
 	public static void autoPeriodic() {
 		switch(Autonomous.command) {
 		case "test":
-			testAuto(0);
+			if(aSchedule(0,5))setHeading(90);
+			else if(aSchedule(5,10))setHeading(180);
+			else if(aSchedule(0,5))setHeading(90);
+			else if(aSchedule(10,15))setHeading(270);
+			else if(aSchedule(15,20))setHeading(300);
+			else setHeading(0);
 			break;
 		default:
+			setHeading(0);
 			break;
 		}
 	}
@@ -36,13 +42,14 @@ public class Autonomous {
 		return (Timer.getFPGATimestamp()>=start && Timer.getFPGATimestamp()<=end)?true:false;
 	}
 
-	public static void testAuto(double heading){
-		heading = Input.constrainAngle(heading+180);
+	public static void setHeading(double heading){
 		double angle = (Input.getAngle());
-		double diff = 180 - Math.abs(angle - heading);
-		diff = Input.constrainAngle(diff);
+		double bHeading = Input.constrainAngle(heading+180);
+		double diff = 90*Math.cos(angle-bHeading)+90;
+		double diffD = -1*Math.sin(angle-bHeading);
+		//diffD should return positive when left(negative turn), negative right
 		SmartDashboard.putNumber("AutoDiff", diff);
-		if(diff<3) {
+		if(diff<4) {
 			turn = 0;
 			last = Timer.getFPGATimestamp();
 			MotorBase.setArms(0);
@@ -50,8 +57,10 @@ public class Autonomous {
 			if(aSchedule(last, last+2)){
 				MotorBase.setArms(1);
 			} else {
+				//angle increases clockwise
+				//negative turn goes left
 				MotorBase.setArms(0);
-				if(angle<180){
+				if(diffD>0){//to the right of heading
 					turn = (0.4*(-diff/180)-0.6);
 				} else {
 					turn = (0.4*(diff/180)+0.6);

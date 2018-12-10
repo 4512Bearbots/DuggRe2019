@@ -29,6 +29,7 @@ public class Robot extends IterativeRobot {
 
 		/* Controls */
 		Input.init();
+		Input.gyro.calibrate();
 	}
 	
 	@Override
@@ -49,15 +50,15 @@ public class Robot extends IterativeRobot {
 		SmartDashboard.putNumber("accelX", Input.accel.getX());
 		SmartDashboard.putNumber("accelY", Input.accel.getY());
 		SmartDashboard.putNumber("accelZ", Input.accel.getZ());
-		SmartDashboard.putNumber("Gyro", Input.gyro.getAngle());
-		SmartDashboard.putNumber("GyroR", Input.gyro.getRate());
+		SmartDashboard.putNumber("Gyro", Input.getAngle());
+		SmartDashboard.putNumber("GyroR", Input.getAngleRate());
 	}
 	
 	@Override
 	public void autonomousInit() {//runs upon auto startup
-		Autonomous.command = autoChoose.getSelected();
-		Autonomous.aTime = Timer.getFPGATimestamp();
+		MotorBase.driveInit();
 		Autonomous.autoInit();
+		Autonomous.command = autoChoose.getSelected();
 	}
 	
 	@Override

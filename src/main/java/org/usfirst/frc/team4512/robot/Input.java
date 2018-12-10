@@ -3,8 +3,8 @@ package org.usfirst.frc.team4512.robot;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.GenericHID.Hand;
+import edu.wpi.first.wpilibj.SPI.Port;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj.AnalogGyro;
 import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 import edu.wpi.first.wpilibj.BuiltInAccelerometer;
 import edu.wpi.first.wpilibj.DigitalInput;
@@ -41,7 +41,7 @@ public class Input{
 		dEncoderR = new Encoder(2, 3);
 		liftEncoder = new Encoder(6, 7);
         accel = new BuiltInAccelerometer();
-        gyro = new ADXRS450_Gyro();
+        gyro = new ADXRS450_Gyro(Port.kOnboardCS0);
 		sUp = new DigitalInput(1);
         sDown = new DigitalInput(8);   
     }
@@ -62,9 +62,24 @@ public class Input{
 			return 0;//inside deadband
 		}
     }
+
+    public static double constrainAngle(double x){
+        while(x<0){//constrain angles 0 - 360
+            x += 360;
+        } if(x>360){
+            x = x % 360;
+        }
+        return x;
+    }
     
+    public static double getAngleRate(){
+        return gyro.getRate();
+    }
+    public static double getAngle(){
+        return constrainAngle(gyro.getAngle());
+    }
     public static double getLeftY(){
-        double joy = deadband(xbox.getY(KLEFT));
+        double joy = -deadband(xbox.getY(KLEFT));
         SmartDashboard.putNumber("LJoyY", joy);
         return joy;
     }
@@ -74,7 +89,7 @@ public class Input{
         return joy;
     }
     public static double getRightY(){
-        double joy = deadband(xbox.getY(KRIGHT));
+        double joy = -deadband(xbox.getY(KRIGHT));
         SmartDashboard.putNumber("RJoyY", joy);
         return joy;
     }

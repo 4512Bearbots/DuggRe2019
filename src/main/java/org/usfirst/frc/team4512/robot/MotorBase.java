@@ -33,8 +33,8 @@ public class MotorBase{
 	public static double dsTime;//stopped
 	public static double tgTime;//same for turn
 	public static double tsTime;
-	public static double luTime;//warming for lift - up
-	public static double ldTime;//down
+	public static double lgTime;//warming for lift - up
+	public static double lsTime;//down
 	public static double lHigh;//last non-zero lift power
 	public static double lLow;
 	public static double dForward;//value affecting forward speed in feedforward

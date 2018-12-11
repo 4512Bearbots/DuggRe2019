@@ -19,6 +19,7 @@ public class Autonomous {
 		MotorBase.dLeftB.setNeutralMode(NeutralMode.Coast);
 		MotorBase.dRightF.setNeutralMode(NeutralMode.Coast);
 		MotorBase.dRightB.setNeutralMode(NeutralMode.Coast);
+		MotorBase.dSpeed = 0.5;
 		aTime = Timer.getFPGATimestamp();
 	}
 
@@ -61,9 +62,9 @@ public class Autonomous {
 				//negative turn goes left
 				MotorBase.setArms(0);
 				if(diffD>0){//to the right of heading
-					turn = (0.4*(-diff/180)-0.6);
+					turn = (0.3*(-diff/180)-0.7);
 				} else {
-					turn = (0.4*(diff/180)+0.6);
+					turn = (0.3*(diff/180)+0.7);
 				}
 			}
 			

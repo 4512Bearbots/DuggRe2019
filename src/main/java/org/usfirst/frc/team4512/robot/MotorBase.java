@@ -29,20 +29,9 @@ public class MotorBase{
 
     /* Constants */
 	public static double dSpeed;//overall speed affecting robots actions
-	public static double dgTime;//warming for stopping acceleration jerk
-	public static double dsTime;//stopped
-	public static double tgTime;//same for turn
-	public static double tsTime;
-	public static double lgTime;//warming for lift - up
-	public static double lsTime;//down
 	public static double lHigh;//last non-zero lift power
-	public static double lLow;
-	public static double dForward;//value affecting forward speed in feedforward
 	public static double dForwardH;//last non-zero FORWARD value
-	public static double dForwardL;
-	public static double dTurn;//value affecting turning in feedforward
 	public static double dTurnH;//last non-zero TURN value
-	public static double dTurnL;
 	public static double driveK;//value affecting the slew of acceleration
 	public static double liftK;//for lift
 	public static int lState;//determine state for executing lift commands
@@ -71,7 +60,7 @@ public class MotorBase{
 		dSpeed = 0.3;
 		driveK = 0.2;
 		liftK=0.075;
-		dForward=dForwardH=dTurn=dgTime=dsTime=luTime=ldTime=lState = 0;
+		dForwardH=lState = 0;
 		Input.reset();
 		System.out.println("--Feed Forward Teleop--");
     }

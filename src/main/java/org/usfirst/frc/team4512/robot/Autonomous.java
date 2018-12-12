@@ -26,13 +26,14 @@ public class Autonomous {
 	public static void autoPeriodic() {
 		switch(Autonomous.command) {
 		case "test":
+		/*
 			if(aSchedule(0,5))setHeading(90);
 			else if(aSchedule(5,10))setHeading(180);
 			else if(aSchedule(0,5))setHeading(90);
 			else if(aSchedule(10,15))setHeading(270);
 			else if(aSchedule(15,20))setHeading(300);
 			else setHeading(0);
-			break;
+			break;*/
 		default:
 			setHeading(0);
 			break;
@@ -50,12 +51,12 @@ public class Autonomous {
 		double diffD = -1*Math.sin(angle-bHeading);
 		//diffD should return positive when left(negative turn), negative right
 		SmartDashboard.putNumber("AutoDiff", diff);
-		if(diff<4) {
+		if(diff<6) {
 			turn = 0;
 			last = Timer.getFPGATimestamp();
 			MotorBase.setArms(0);
 		} else {
-			if(aSchedule(last, last+2)){
+			if(aSchedule(last, last+1)){
 				MotorBase.setArms(1);
 			} else {
 				//angle increases clockwise

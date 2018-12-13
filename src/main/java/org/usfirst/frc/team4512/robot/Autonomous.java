@@ -48,7 +48,7 @@ public class Autonomous {
 		double angle = (Input.getAngle());
 		double bHeading = Input.constrainAngle(heading+180);
 		double diff = 90*Math.cos(angle-bHeading)+90;
-		double diffD = -1*Math.sin(angle-bHeading);
+		double diffD = -10*Math.sin(angle-bHeading);
 		//diffD should return positive when left(negative turn), negative right
 		SmartDashboard.putNumber("AutoDiff", diff);
 		if(diff<6) {

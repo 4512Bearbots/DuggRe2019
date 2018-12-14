@@ -12,7 +12,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 public class MotorBase{
     /** Hardware */
 	/* Right Talons */
-	static TalonSRX dRightF = new TalonSRX(1);
+	static TalonSRX dRightF = new TalonSRX(1);//gearbox - 8.46:1
 	static TalonSRX dRightB = new TalonSRX(2);
 
 	/* Left Talons */

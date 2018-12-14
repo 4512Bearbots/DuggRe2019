@@ -47,11 +47,11 @@ public class Autonomous {
 	public static void setHeading(double heading){
 		double angle = (Input.getAngle());
 		double bHeading = Input.constrainAngle(heading+180);
-		double diff = 90*Math.cos(angle-bHeading)+90;
+		double diff = (90*Math.cos(angle-bHeading))+90;
 		double diffD = -10*Math.sin(angle-bHeading);
 		//diffD should return positive when left(negative turn), negative right
 		SmartDashboard.putNumber("AutoDiff", diff);
-		if(diff<6) {
+		if(diff<5) {
 			turn = 0;
 			last = Timer.getFPGATimestamp();
 			MotorBase.setArms(0);

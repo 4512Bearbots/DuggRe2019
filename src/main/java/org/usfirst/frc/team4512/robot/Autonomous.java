@@ -50,7 +50,7 @@ public class Autonomous {
 		double diffD = Input.toRadians(Math.sin(Input.toRadians(angle-bHeading)));
 		//diffD should return positive when left(negative turn), negative right
 		SmartDashboard.putNumber("AutoDiff", diff);
-		if(diff<6) {
+		if(diff<5) {
 			turn = 0;
 			last = Timer.getFPGATimestamp();
 			MotorBase.setArms(0);

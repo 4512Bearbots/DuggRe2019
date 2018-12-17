@@ -2,9 +2,9 @@ package org.usfirst.frc.team4512.robot;
 public class Encyclopedia{// a referendum of coding methods you may see
     /** Ternary operators
      * 
-     Basically, a shortened if loop.
-     Ternary operators are usually used to perform basic true/false switches, 
-     although they have the capability of a normal if 'control' statement.
+     [Basically, a shortened if loop.                                         ]
+     [Ternary operators are usually used to perform basic true/false switches,] 
+     [although they have the capability of a normal if 'control' statement.   ]
      Take this translation for example:
 
      if(statement){
@@ -13,11 +13,11 @@ public class Encyclopedia{// a referendum of coding methods you may see
          int a = 1;
      }
 
-      vv into vv
+      vv becomes vv
 
      int a = (statement)?b:1;
 
-     (statement) -- parentheses for boolean evaluation
+     (statement) -- parentheses for logic evaluation
      
      ? -- denotes that this is a ternary operator
      
@@ -45,9 +45,9 @@ public class Encyclopedia{// a referendum of coding methods you may see
 
     /** Static modifier
      * 
-      The 'static' denotation is mainly in usage relating to multiple classes.
-      When a field is 'static', it essentially means that that field is similar
-      across all classes.
+      [The 'static' denotation is mainly in usage relating to multiple classes. ]
+      [When a field is 'static', it essentially means that that field is        ]
+      [similar across all classes.                                               ]
       Consider the following:
 
       public class Stat{

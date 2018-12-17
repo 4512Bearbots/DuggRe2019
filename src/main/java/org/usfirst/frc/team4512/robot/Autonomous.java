@@ -26,14 +26,13 @@ public class Autonomous {
 	public static void autoPeriodic() {
 		switch(Autonomous.command) {
 		case "test":
-		/*
-			if(aSchedule(0,5))setHeading(90);
-			else if(aSchedule(5,10))setHeading(180);
-			else if(aSchedule(0,5))setHeading(90);
-			else if(aSchedule(10,15))setHeading(270);
-			else if(aSchedule(15,20))setHeading(300);
+			if(aSchedule(0,4))setHeading(90);
+			else if(aSchedule(4,8))setHeading(180);
+			else if(aSchedule(8,12))setHeading(91);
+			else if(aSchedule(12,16))setHeading(270);
+			else if(aSchedule(16,20))setHeading(220);
 			else setHeading(0);
-			break;*/
+			break;
 		default:
 			setHeading(0);
 			break;
@@ -47,8 +46,8 @@ public class Autonomous {
 	public static void setHeading(double heading){
 		double angle = (Input.getAngle());
 		double bHeading = Input.constrainAngle(heading+180);
-		double diff = 90*Math.cos(angle-bHeading)+90;
-		double diffD = -10*Math.sin(angle-bHeading);
+		double diff = 90 * Input.toDegrees(Math.cos(Input.toRadians(angle-bHeading)))+90;//https://www.desmos.com/calculator/x3yql5nknh
+		double diffD = Input.toRadians(Math.sin(Input.toRadians(angle-bHeading)));
 		//diffD should return positive when left(negative turn), negative right
 		SmartDashboard.putNumber("AutoDiff", diff);
 		if(diff<6) {

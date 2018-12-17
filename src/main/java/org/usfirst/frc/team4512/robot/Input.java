@@ -63,6 +63,14 @@ public class Input{
 		}
     }
 
+    public static double toRadians(double degrees){
+        return degrees * (Math.PI/180);
+    }
+
+    public static double toDegrees(double radians){
+        return radians * (180/Math.PI);
+    }
+
     public static double constrainAngle(double x){
         while(x<0){//constrain angles 0 - 360
             x += 360;

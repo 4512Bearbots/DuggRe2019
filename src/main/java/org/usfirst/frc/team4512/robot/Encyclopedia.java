@@ -1,5 +1,25 @@
 package org.usfirst.frc.team4512.robot;
-public class Encyclopedia{// a referendum of coding methods you may see
+public class Encyclopedia{// a referendum of common terms you may see
+    /*
+    ** Nolan Brown
+    ** 12/11/2018
+
+    Examples of common peripherals or libraries being used for reference.
+    You can always visit the documentation to look up something.
+    http://first.wpi.edu/FRC/roborio/release/docs/java/
+
+    ----------
+    Sensors
+    ----------
+    Gyro : ADXRS450_Gyro gyro = new ADXRS450_Gyro(Port.kOnboardCS0);  //using SPI port
+    XboxController xbox = new XboxController(0);
+    - Hand KLEFT = GenericHID.Hand.kLeft;   //these refer to the side of the controller(left stick/right stick)
+    - Hand KRIGHT = GenericHID.Hand.kRight;
+    Encoder encoder = new Encoder(0, 0);    //2 inputs for quadrature, refer to electrical
+    BuiltInAccelerometer accel = new BuiltInAccelerometer();  //dinky accel. on the roborio(caution)
+    DigitalInput switch = new DigitalInput(0); //basic digital(0 or 1) for things like switches/buttons
+    */
+    
     /** Ternary operators
      * 
      [Basically, a shortened if loop.                                         ]

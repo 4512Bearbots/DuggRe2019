@@ -13,6 +13,7 @@ public class Autonomous {
 	public static double aTime;
 	public static double last = 0;
 	public static String command;
+	public static Timer time;
 
 	public static void autoInit() {
 		MotorBase.dLeftF.setNeutralMode(NeutralMode.Coast);
@@ -20,18 +21,29 @@ public class Autonomous {
 		MotorBase.dRightF.setNeutralMode(NeutralMode.Coast);
 		MotorBase.dRightB.setNeutralMode(NeutralMode.Coast);
 		MotorBase.dSpeed = 0.5;
-		aTime = Timer.getFPGATimestamp();
+		time = new Timer();
+		switch(Autonomous.command){
+			case "test":
+				time.reset();
+				time.start();
+				break;
+			default:
+				break;
+		}
 	}
 
 	public static void autoPeriodic() {
 		switch(Autonomous.command) {
 		case "test":
-			if(aSchedule(0,4))setHeading(90);
-			else if(aSchedule(4,8))setHeading(180);
-			else if(aSchedule(8,12))setHeading(91);
-			else if(aSchedule(12,16))setHeading(270);
-			else if(aSchedule(16,20))setHeading(220);
-			else setHeading(0);
+			if(time.get()<4)setHeading(90);
+			else if(time.get()<8)setHeading(180);
+			else if(time.get()<12)setHeading(91);
+			else if(time.get()<16)setHeading(270);
+			else if(time.get()<20)setHeading(220);
+			else {
+				setHeading(0);
+				time.stop();
+			}
 			break;
 		default:
 			setHeading(0);
@@ -39,32 +51,28 @@ public class Autonomous {
 		}
 	}
 
-	public static boolean aSchedule(double start, double end) {
-		return (Timer.getFPGATimestamp()>=start && Timer.getFPGATimestamp()<=end)?true:false;
-	}
-
 	public static void setHeading(double heading){
 		double angle = (Input.getAngle());
 		double bHeading = Input.constrainAngle(heading+180);
-		double diff = 90 * Input.toDegrees(Math.cos(Input.toRadians(angle-bHeading)))+90;//https://www.desmos.com/calculator/x3yql5nknh
-		double diffD = Input.toRadians(Math.sin(Input.toRadians(angle-bHeading)));
+		double diff = 90 * (Math.cos(Input.toRadians(angle-bHeading)))+90;//https://www.desmos.com/calculator/x3yql5nknh
+		double diffD = (Math.sin(Input.toRadians(angle-bHeading)));
 		//diffD should return positive when left(negative turn), negative right
 		SmartDashboard.putNumber("AutoDiff", diff);
-		if(diff<5) {
+		if(diff<0.35) {
 			turn = 0;
 			last = Timer.getFPGATimestamp();
 			MotorBase.setArms(0);
 		} else {
-			if(aSchedule(last, last+1)){
+			if(Timer.getFPGATimestamp()<last+0.5){
 				MotorBase.setArms(1);
 			} else {
 				//angle increases clockwise
 				//negative turn goes left
 				MotorBase.setArms(0);
-				if(diffD>0){//to the right of heading
-					turn = (0.3*(-diff/180)-0.7);
+				if(diffD<0){//to the right of heading
+					turn = (0.6*(-diff/180)-0.4);
 				} else {
-					turn = (0.3*(diff/180)+0.7);
+					turn = (0.6*(diff/180)+0.4);
 				}
 			}
 			

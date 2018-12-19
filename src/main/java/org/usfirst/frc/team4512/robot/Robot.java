@@ -17,7 +17,6 @@ public class Robot extends IterativeRobot {
 	/* Live Window */
 	String autoCommand;
 	SendableChooser<String> autoChoose;//give auto options
-	private String autoSelected;//pick which auto to run
 	
 	@Override
 	public void robotInit() {//commands run on code startup
@@ -56,9 +55,9 @@ public class Robot extends IterativeRobot {
 	
 	@Override
 	public void autonomousInit() {//runs upon auto startup
+		Autonomous.command = autoChoose.getSelected();
 		MotorBase.driveInit();
 		Autonomous.autoInit();
-		Autonomous.command = autoChoose.getSelected();
 	}
 	
 	@Override

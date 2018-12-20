@@ -7,24 +7,21 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class Autonomous {
 
-	public static double forward = 0;
-	public static double turn = 0;
-	public static double lift = 0;
-	public static double aTime;
-	public static double last = 0;
-	public static String command;
-	public static Timer time;
+	private static double forward = 0;
+	private static double turn = 0;
+	private static double last = 0;
+	private static String command;
+	private static Timer time;
+	private static Timer timeTotal;
 
 	public static void autoInit() {
-		MotorBase.dLeftF.setNeutralMode(NeutralMode.Coast);
-		MotorBase.dLeftB.setNeutralMode(NeutralMode.Coast);
-		MotorBase.dRightF.setNeutralMode(NeutralMode.Coast);
-		MotorBase.dRightB.setNeutralMode(NeutralMode.Coast);
-		MotorBase.dSpeed = 0.5;
+		MotorBase.setNeutral(NeutralMode.Coast);
+		MotorBase.shift(0.5);
 		time = new Timer();
 		switch(Autonomous.command){
 			case "test":
 				time.reset();
+				timeTotal.reset();
 				time.start();
 				break;
 			default:
@@ -49,6 +46,7 @@ public class Autonomous {
 			setHeading(0);
 			break;
 		}
+		MotorBase.setDrive(forward, turn);
 	}
 
 	public static void setHeading(double heading){
@@ -58,13 +56,16 @@ public class Autonomous {
 		double diffD = (Math.sin(Input.toRadians(angle-bHeading)));
 		//diffD should return positive when left(negative turn), negative right
 		SmartDashboard.putNumber("AutoDiff", diff);
-		if(diff<0.35) {
+		if(diff<0.25) {
 			turn = 0;
 			last = Timer.getFPGATimestamp();
+			timeTotal.start();
 			MotorBase.setArms(0);
 		} else {
-			if(Timer.getFPGATimestamp()<last+0.5){
+			if(Timer.getFPGATimestamp()<last+0.6 && (diff>3 && timeTotal.get()>0.25)){
 				MotorBase.setArms(1);
+				timeTotal.stop();
+				timeTotal.reset();
 			} else {
 				//angle increases clockwise
 				//negative turn goes left
@@ -78,6 +79,5 @@ public class Autonomous {
 			
 		}
 		SmartDashboard.putNumber("AutoTurn", turn);
-		MotorBase.setDrive(forward, turn);
 	}
 }

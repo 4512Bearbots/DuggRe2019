@@ -12,30 +12,30 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 public class MotorBase{
     /** Hardware */
 	/* Right Talons */
-	static TalonSRX dRightF = new TalonSRX(1);//gearbox - 8.46:1
-	static TalonSRX dRightB = new TalonSRX(2);
+	private static TalonSRX dRightF = new TalonSRX(1);//gearbox - 8.46:1
+	private static TalonSRX dRightB = new TalonSRX(2);
 
 	/* Left Talons */
-	static TalonSRX dLeftF = new TalonSRX(3);
-	static TalonSRX dLeftB = new TalonSRX(4);
+	private static TalonSRX dLeftF = new TalonSRX(3);
+	private static TalonSRX dLeftB = new TalonSRX(4);
 
 	/* Lift Victors */
-	static VictorSP liftF = new VictorSP(0);
-	static VictorSP liftB = new VictorSP(1);
+	private static VictorSP liftF = new VictorSP(0);
+	private static VictorSP liftB = new VictorSP(1);
 
 	/* Intake Victors */
-	static Spark armR = new Spark(4);
-	static Spark armL = new Spark(5);
+	private static Spark armR = new Spark(4);
+	private static Spark armL = new Spark(5);
 
     /* Constants */
-	public static double dSpeed;//overall speed affecting robots actions
-	public static double lHigh;//last non-zero lift power
-	public static double dForwardH;//last non-zero FORWARD value
-	public static double dTurnH;//last non-zero TURN value
-	public static double driveK;//value affecting the slew of acceleration
-	public static double liftK;//for lift
-	public static int lState;//determine state for executing lift commands
-	public static final int MAXLIFT = 4300;//top of the lift in counts(actual ~4400)
+	private static double dSpeed;//overall speed affecting robots actions
+	private static double lHigh;//last non-zero lift power
+	private static double dForwardH;//last non-zero FORWARD value
+	private static double dTurnH;//last non-zero TURN value
+	private static double driveK;//value affecting the slew of acceleration
+	private static double liftK;//for lift
+	private static int lState;//determine state for executing lift commands
+	private static final int MAXLIFT = 4300;//top of the lift in counts(actual ~4400)
 	    
     public static void driveInit(){
 		/* Disable motor controllers */
@@ -43,10 +43,7 @@ public class MotorBase{
 		setLift(0);
 		
 		/* Set Neutral mode *///motor behavior
-		dRightF.setNeutralMode(NeutralMode.Brake);
-		dRightB.setNeutralMode(NeutralMode.Brake);
-		dLeftF.setNeutralMode(NeutralMode.Brake);
-		dLeftB.setNeutralMode(NeutralMode.Brake);
+		setNeutral(NeutralMode.Brake);
 
 		/* Configure output direction */
 		dRightF.setInverted(true);
@@ -208,5 +205,16 @@ public class MotorBase{
 	public static void onUp() {
 		//MAXLIFT = Input.getLift()-150;
 		//System.out.println("Top triggered on: "+Input.getLift());
+	}
+
+	public static void setNeutral(NeutralMode n){
+		dRightF.setNeutralMode(n);
+		dRightB.setNeutralMode(n);
+		dLeftF.setNeutralMode(n);
+		dLeftB.setNeutralMode(n);
+	}
+
+	public static void shift(double speed){
+		dSpeed = speed;
 	}
 }

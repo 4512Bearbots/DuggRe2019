@@ -28,34 +28,18 @@ public class Robot extends IterativeRobot {
 
 		/* Controls */
 		Input.init();
-		Input.gyro.calibrate();
+		Input.calibrate();
 	}
 	
 	@Override
 	public void robotPeriodic() {//this command is like auto or teleop periodic, but is ran regardless of mode, even disabled(after other periodics)
-		SmartDashboard.putBoolean("Top", Input.sUp.get());
-		SmartDashboard.putBoolean("Down", Input.sDown.get());
-		SmartDashboard.putNumber("DriveSpeed", MotorBase.dSpeed);
-		SmartDashboard.putNumber("LeftSpeed", MotorBase.dLeftF.getMotorOutputPercent());
-		SmartDashboard.putNumber("RightSpeed", MotorBase.dRightF.getMotorOutputPercent());
-		SmartDashboard.putNumber("ArmRSpeed", MotorBase.armR.get());
-		SmartDashboard.putNumber("ArmLSpeed", MotorBase.armL.get());		
-		SmartDashboard.putNumber("RightDriveEncoder", Input.dEncoderR.get());
-		SmartDashboard.putNumber("LeftDriveEncoder", Input.dEncoderL.get());
-		SmartDashboard.putNumber("LiftEncoder", Input.liftEncoder.get());
-		SmartDashboard.putNumber("MaxLift", MotorBase.MAXLIFT);
-		SmartDashboard.putNumber("TimeTotal", Timer.getFPGATimestamp());
-		SmartDashboard.putNumber("TimeLeft", Timer.getMatchTime());
-		SmartDashboard.putNumber("accelX", Input.accel.getX());
-		SmartDashboard.putNumber("accelY", Input.accel.getY());
-		SmartDashboard.putNumber("accelZ", Input.accel.getZ());
-		SmartDashboard.putNumber("Gyro", Input.getAngle());
-		SmartDashboard.putNumber("GyroR", Input.getAngleRate());
+		Input.displayStats();
+		MotorBase.displayStats();
 	}
 	
 	@Override
 	public void autonomousInit() {//runs upon auto startup
-		Autonomous.command = autoChoose.getSelected();
+		Autonomous.setCommand(autoChoose.getSelected());
 		MotorBase.driveInit();
 		Autonomous.autoInit();
 	}

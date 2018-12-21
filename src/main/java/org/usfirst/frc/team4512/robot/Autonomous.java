@@ -13,11 +13,13 @@ public class Autonomous {
 	private static String command;
 	private static Timer time;
 	private static Timer timeTotal;
+	private static double timeDetriment = 0;
 
 	public static void autoInit() {
 		MotorBase.setNeutral(NeutralMode.Coast);
 		MotorBase.shift(0.5);
 		time = new Timer();
+		timeTotal = new Timer();
 		switch(Autonomous.command){
 			case "test":
 				time.reset();
@@ -56,28 +58,26 @@ public class Autonomous {
 		double diffD = (Math.sin(Input.toRadians(angle-bHeading)));
 		//diffD should return positive when left(negative turn), negative right
 		SmartDashboard.putNumber("AutoDiff", diff);
-		if(diff<0.25) {
+		if(diff<0.3) {
 			turn = 0;
 			last = Timer.getFPGATimestamp();
 			timeTotal.start();
 			MotorBase.setArms(0);
 		} else {
-			if(Timer.getFPGATimestamp()<last+0.6 && (diff>3 && timeTotal.get()>0.25)){
-				MotorBase.setArms(1);
-				timeTotal.stop();
-				timeTotal.reset();
+			//angle increases clockwise
+			//negative turn goes left
+			MotorBase.setArms(0);
+			if(diffD<0){//to the right of heading
+				turn = (0.6*(-diff/180)-0.4);
 			} else {
-				//angle increases clockwise
-				//negative turn goes left
-				MotorBase.setArms(0);
-				if(diffD<0){//to the right of heading
-					turn = (0.6*(-diff/180)-0.4);
-				} else {
-					turn = (0.6*(diff/180)+0.4);
-				}
+				turn = (0.6*(diff/180)+0.4);
 			}
 			
 		}
 		SmartDashboard.putNumber("AutoTurn", turn);
+	}
+	
+	public static void setCommand(String str){
+		Autonomous.command = str;
 	}
 }

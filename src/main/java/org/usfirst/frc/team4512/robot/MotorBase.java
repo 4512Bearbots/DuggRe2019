@@ -70,8 +70,8 @@ public class MotorBase{
 		//stop the lift if bumpers are not pressed
 		if(lState!=1 && lState!=2 && lState != 5) lState=0;
 
-		boolean up = Input.sUp.get();
-		boolean down = Input.sDown.get();
+		boolean up = Input.getUp();
+		boolean down = Input.getDown();
 		boolean rightB = Input.getRightBumper();
 		boolean leftB = Input.getLeftBumper();
 
@@ -200,7 +200,7 @@ public class MotorBase{
 
 	//whenever lift switches are pressed, run these methods
 	public static void onDown() {
-		Input.liftEncoder.reset();//make sure bottoming out sets the encoder to 0
+		Input.resetLift();//make sure bottoming out sets the encoder to 0
 	}
 	public static void onUp() {
 		//MAXLIFT = Input.getLift()-150;
@@ -216,5 +216,14 @@ public class MotorBase{
 
 	public static void shift(double speed){
 		dSpeed = speed;
+	}
+
+	public static void displayStats(){
+		SmartDashboard.putNumber("DriveSpeed", MotorBase.dSpeed);
+		SmartDashboard.putNumber("LeftSpeed", MotorBase.dLeftF.getMotorOutputPercent());
+		SmartDashboard.putNumber("RightSpeed", MotorBase.dRightF.getMotorOutputPercent());
+		SmartDashboard.putNumber("ArmRSpeed", MotorBase.armR.get());
+		SmartDashboard.putNumber("ArmLSpeed", MotorBase.armL.get());
+		SmartDashboard.putNumber("MaxLift", MotorBase.MAXLIFT);
 	}
 }

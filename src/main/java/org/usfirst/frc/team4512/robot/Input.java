@@ -9,18 +9,19 @@ import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 import edu.wpi.first.wpilibj.BuiltInAccelerometer;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Encoder;
+import edu.wpi.first.wpilibj.Timer;
 public class Input{
     /* Sensors */
-    public static BuiltInAccelerometer accel;
-    public static ADXRS450_Gyro gyro;
-	public static DigitalInput sUp;
-    public static DigitalInput sDown;
-    public static Encoder dEncoderL;
-	public static Encoder dEncoderR;
-    public static Encoder liftEncoder;
+    private static BuiltInAccelerometer accel;
+    private static ADXRS450_Gyro gyro;
+	private static DigitalInput sUp;
+    private static DigitalInput sDown;
+    private static Encoder dEncoderL;
+	private static Encoder dEncoderR;
+    private static Encoder liftEncoder;
     
     /* Controls */
-	public static XboxController xbox; //object for controller --more buttons :)
+	private static XboxController xbox; //object for controller --more buttons :)
 	public static Debouncer uDebouncer; //d-pad doesn't return values lightning fast
     public static Debouncer dDebouncer; //define buttons to only return every period
     public static Debouncer lDebouncer;
@@ -51,6 +52,13 @@ public class Input{
 		dEncoderL.reset();
         dEncoderR.reset();
         gyro.reset();
+    }
+    public static void resetLift(){
+        liftEncoder.reset();
+    }
+
+    public static void calibrate(){
+        Input.gyro.calibrate();
     }
 
     /** deadband ? percent, used on the gamepad */
@@ -138,5 +146,26 @@ public class Input{
     }
     public static int getRightDrive(){
         return dEncoderR.get();
+    }
+    public static boolean getDown(){
+        return sDown.get();
+    }
+    public static boolean getUp(){
+        return sUp.get();
+    }
+
+    public static void displayStats(){
+        SmartDashboard.putBoolean("Top", Input.sUp.get());
+		SmartDashboard.putBoolean("Down", Input.sDown.get());
+		SmartDashboard.putNumber("RightDriveEncoder", Input.dEncoderR.get());
+		SmartDashboard.putNumber("LeftDriveEncoder", Input.dEncoderL.get());
+		SmartDashboard.putNumber("LiftEncoder", Input.liftEncoder.get());
+		SmartDashboard.putNumber("TimeTotal", Timer.getFPGATimestamp());
+		SmartDashboard.putNumber("TimeLeft", Timer.getMatchTime());
+		SmartDashboard.putNumber("accelX", Input.accel.getX());
+		SmartDashboard.putNumber("accelY", Input.accel.getY());
+		SmartDashboard.putNumber("accelZ", Input.accel.getZ());
+		SmartDashboard.putNumber("Gyro", Input.getAngle());
+		SmartDashboard.putNumber("GyroR", Input.getAngleRate());
     }
 }

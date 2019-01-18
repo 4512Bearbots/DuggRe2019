@@ -35,15 +35,16 @@ public class Encyclopedia{// a referendum of common terms you may see
 
       vv becomes vv
 
-     int a = (statement)?b:1;
+     int a = (statement)? b:1;
 
      (statement) -- parentheses for logic evaluation
      
      ? -- denotes that this is a ternary operator
      
-     ?b:1; if (statement) is true, the value(a) equals first term(b), otherwise the second(1)      seen as ?if(true):if(false);
+     ? b:1; -- if (statement) is true, the value(a) equals first term(b), otherwise the second(1)      seen as ? if(true):if(false);
      
-     Use this operator if you need to do simple one-line if statements. Anything that needs multiple statements should just use a normal if.
+     Use this operator if you need to do simple one-line if statements. Anything that needs multiple statements 
+     should just use a normal if statement.
     */
 
 
@@ -67,7 +68,7 @@ public class Encyclopedia{// a referendum of common terms you may see
      * 
       [The 'static' denotation is mainly in usage relating to multiple classes. ]
       [When a field is 'static', it essentially means that that field is        ]
-      [similar across all classes.                                               ]
+      [similar across all classes.                                              ]
       Consider the following:
 
       public class Stat{

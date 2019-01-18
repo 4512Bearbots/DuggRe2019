@@ -9,11 +9,9 @@ public class Autonomous {
 
 	private static double forward = 0;
 	private static double turn = 0;
-	private static double last = 0;
 	private static String command;
 	private static Timer time;
 	private static Timer timeTotal;
-	private static double timeDetriment = 0;
 
 	public static void autoInit() {
 		MotorBase.setNeutral(NeutralMode.Coast);
@@ -60,7 +58,6 @@ public class Autonomous {
 		SmartDashboard.putNumber("AutoDiff", diff);
 		if(diff<0.3) {
 			turn = 0;
-			last = Timer.getFPGATimestamp();
 			timeTotal.start();
 			MotorBase.setArms(0);
 		} else {

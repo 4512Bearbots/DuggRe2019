@@ -9,6 +9,8 @@ public class Autonomous {
 
 	private static double forward = 0;
 	private static double turn = 0;
+	private static double kTurnP = 0.1;//proportional constant affecting turn rate
+	private static double kTurnF = 0.05;//base constant used to overcome friction
 	private static String command;
 	private static Timer time;
 	private static Timer timeTotal;
@@ -41,6 +43,16 @@ public class Autonomous {
 				setHeading(0);
 				time.stop();
 			}
+			break;
+		case "vision":
+			double tx = Input.getTx();
+			double angleError = 0;
+			if(tx>0.5){
+				angleError = kTurnP*(tx) + kTurnF;
+			} else if(tx<-0.5){
+				angleError = kTurnP*(-tx) - kTurnF;
+			}
+			turn = angleError;
 			break;
 		default:
 			setHeading(0);

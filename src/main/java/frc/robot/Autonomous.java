@@ -45,6 +45,7 @@ public class Autonomous {
 				time.stop();
 			}
 			break;
+		//this is for targeting cargo
 		case "vision":
 			double tx = Input.getTx();
 			double angleError = 0;

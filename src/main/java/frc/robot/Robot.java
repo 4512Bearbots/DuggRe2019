@@ -5,15 +5,15 @@
 /* the project.                                                               */
 /*----------------------------------------------------------------------------*/
 
-package org.usfirst.frc.team4512.robot;
+package frc.robot;
 
-import edu.wpi.first.wpilibj.IterativeRobot;
+import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 @SuppressWarnings("unused")
-public class Robot extends IterativeRobot {
+public class Robot extends TimedRobot {
 	/* Live Window */
 	String autoCommand;
 	SendableChooser<String> autoChoose;//give auto options
@@ -22,9 +22,9 @@ public class Robot extends IterativeRobot {
 	public void robotInit() {//commands run on code startup
 		/* Live Window assingment */
 		autoChoose = new SendableChooser<String>();
-		autoChoose.addDefault("Default", "default");
-		autoChoose.addObject("Test", "test");
-		autoChoose.addObject("Vision", "vision");
+		autoChoose.setDefaultOption("Default", "default");
+		autoChoose.addOption("Test", "test");
+		autoChoose.addOption("Vision", "vision");
 		SmartDashboard.putData("Auto Chooser", autoChoose);
 
 		/* Controls */

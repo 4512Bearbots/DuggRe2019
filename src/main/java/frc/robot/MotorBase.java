@@ -1,4 +1,4 @@
-package org.usfirst.frc.team4512.robot;
+package frc.robot;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.DemandType;

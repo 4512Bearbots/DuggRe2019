@@ -47,21 +47,7 @@ public class Autonomous {
 			break;
 		//this is for targeting cargo
 		case "vision":
-			double tx = Input.getTx();
-			double angleError = 0;
-			if(tx>0.3){
-				angleError = kTurnP*(tx) + kTurnF;
-			} else if(tx<-0.3){
-				angleError = kTurnP*(tx) - kTurnF;
-			}
-			turn = angleError;
-			if(Input.getTa()!=0.0){
-				forward = 0.35;
-				MotorBase.setArms(1);
-			}else{
-				forward=0;
-				MotorBase.setArms(0);
-			}
+			trackVision();
 			break;
 		default:
 			setHeading(0);
@@ -70,6 +56,23 @@ public class Autonomous {
 		MotorBase.setDrive(forward, turn);
 	}
 
+	public static void trackVision(){
+		double tx = Input.getTx();
+		double angleError = 0;
+		if(tx>0.3){
+			angleError = kTurnP*(tx) + kTurnF;
+		} else if(tx<-0.3){
+			angleError = kTurnP*(tx) - kTurnF;
+		}
+		turn = angleError;
+		if(Input.getTa()!=0.0){
+			forward = 0.35;
+			MotorBase.setArms(1);
+		}else{
+			forward=0;
+			MotorBase.setArms(0);
+		}
+	}
 	public static void setHeading(double heading){
 		double angle = (Input.getAngle());
 		double bHeading = Input.constrainAngle(heading+180);
@@ -95,6 +98,13 @@ public class Autonomous {
 		SmartDashboard.putNumber("AutoTurn", turn);
 	}
 	
+	public static double getForward(){
+		return forward;
+	}
+	public static double getTurn(){
+		return turn;
+	}
+
 	public static void setCommand(String str){
 		Autonomous.command = str;
 	}

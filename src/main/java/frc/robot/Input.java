@@ -31,6 +31,8 @@ public class Input{
     public static Debouncer dDebouncer; //define buttons to only return every period
     public static Debouncer lDebouncer;
     public static Debouncer rDebouncer;
+    public static Debouncer backDebouncer;
+    public static Debouncer startDebouncer;
     private static Hand KLEFT = GenericHID.Hand.kLeft; //constant referring to
     private static Hand KRIGHT = GenericHID.Hand.kRight;//the side of controller
 
@@ -54,6 +56,8 @@ public class Input{
         dDebouncer = new Debouncer(xbox, 180f, 0.25);
         lDebouncer = new Debouncer(xbox, 90f, 0.25);
         rDebouncer = new Debouncer(xbox, 270f, 0.25);
+        backDebouncer = new Debouncer(xbox, 7, 0.25);
+        startDebouncer = new Debouncer(xbox, 8, 0.25);
     }
 
     public static void reset(){
@@ -97,6 +101,12 @@ public class Input{
         return x;
     }
     
+    public static void toggleLight(){
+        table.getEntry("ledMode").setNumber((table.getEntry("ledMode").getDouble(0)==0)? 1:0);
+    }
+    public static void shiftPipe(){
+        table.getEntry("pipeline").setNumber((table.getEntry("pipeline").getDouble(0)==0)? 1:0);
+    }
     public static double getTx(){
         return tx.getDouble(0.0);
     }
@@ -150,11 +160,29 @@ public class Input{
     public static boolean getBButton(){
         return xbox.getBButton();
     }
+    public static boolean getButton(int button){
+        return xbox.getRawButton(button);
+    }
     public static double getRightTrigger(){
         return xbox.getTriggerAxis(KRIGHT);
     }
     public static double getLeftTrigger(){
         return xbox.getTriggerAxis(KLEFT);
+    }
+    public static boolean getLeftStick(){
+        return xbox.getStickButton(KLEFT);
+    }
+    public static boolean getRightStick(){
+        return xbox.getStickButton(KRIGHT);
+    }
+    public static boolean getRightStickReleased(){
+        return xbox.getStickButtonReleased(KRIGHT);
+    }
+    public static boolean getBackButton(){
+        return backDebouncer.get();
+    }
+    public static boolean getStartButton(){
+        return startDebouncer.get();
     }
     public static int getLift(){
         return liftEncoder.get();

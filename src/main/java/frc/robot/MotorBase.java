@@ -29,11 +29,14 @@ public class MotorBase{
 
     /* Constants */
 	private static double dSpeed;//overall speed affecting robots actions
+	private static double dSpeedL;
 	private static double lHigh;//last non-zero lift power
 	private static double dForwardH;//last non-zero FORWARD value
 	private static double dTurnH;//last non-zero TURN value
 	private static double driveK;//value affecting the slew of acceleration
 	private static double liftK;//for lift
+	private static double kTurnP = 0.015;//see autonomous
+	private static double kTurnF = 0.15;
 	private static int lState;//determine state for executing lift commands
 	private static final int MAXLIFT = 4300;//top of the lift in counts(actual ~4400)
 	    
@@ -65,6 +68,13 @@ public class MotorBase{
     public static void drivePeriodic(){
 		/* Drive Base */
 		setDrive(Input.getLeftY(),Input.getRightX());
+
+		/* Intake */
+		double rTrigg = Input.getRightTrigger();
+		double lTrigg = Input.getLeftTrigger();
+		if(rTrigg > 0) setArms(rTrigg);
+		else if(lTrigg > 0) setArms(-lTrigg);
+		else setArms(0.25);
 		
 		/* Lift */ 
 		//stop the lift if bumpers are not pressed
@@ -81,6 +91,13 @@ public class MotorBase{
 		if(rightB && leftB) lState = 0;
 		else if(rightB) lState = 3;
 		else if(leftB) lState = 4;
+		if(Input.getBackButton()) Input.toggleLight();
+		if(Input.getStartButton()) Input.shiftPipe();
+		if(Input.getRightStick()) {
+			dSpeedL=dSpeed;
+			trackVision();
+		}
+		else if(Input.getRightStickReleased()) shift(dSpeedL);
 		//reset if pressing switches
 		if(down) onDown();//call methods when switches are pressed
 		if(up) onUp();
@@ -123,13 +140,6 @@ public class MotorBase{
 			break;
 		}
 		
-		/* Intake */
-		double rTrigg = Input.getRightTrigger();
-		double lTrigg = Input.getLeftTrigger();
-		if(rTrigg > 0) setArms(rTrigg);
-		else if(lTrigg > 0) setArms(-lTrigg);
-		else setArms(0.18);
-		
 		/* Drive <-> Lift */
 		//change speed if buttons are pressed
 		//dSpeed=(Input.getAButton())?0.2:dSpeed;
@@ -170,7 +180,19 @@ public class MotorBase{
 		liftF.set(power);
 		liftB.set(power);
     }
-    
+	
+	public static void trackVision(){
+		double tx = Input.getTx();
+		double angleError = 0;
+		if(tx>0.3){
+			angleError = kTurnP*(tx) + kTurnF;
+		} else if(tx<-0.3){
+			angleError = kTurnP*(tx) - kTurnF;
+		}
+		shift(0.5);
+		setDrive(Input.getLeftY(), angleError);
+	}
+
     public static void setArms(double power){
         armR.set(power);
         armL.set(power);

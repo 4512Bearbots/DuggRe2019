@@ -36,7 +36,7 @@ public class MotorBase{
 	private static double driveK;//value affecting the slew of acceleration
 	private static double liftK;//for lift
 	private static double kTurnP = 0.015;//see autonomous
-	private static double kTurnF = 0.15;
+	private static double kTurnF = 0.25;
 	private static int lState;//determine state for executing lift commands
 	private static final int MAXLIFT = 4300;//top of the lift in counts(actual ~4400)
 	    
@@ -94,7 +94,7 @@ public class MotorBase{
 		if(Input.getBackButton()) Input.toggleLight();
 		if(Input.getStartButton()) Input.shiftPipe();
 		if(Input.getRightStick()) {
-			dSpeedL=dSpeed;
+			dSpeedL=(dSpeedL!=dSpeed)? dSpeed:dSpeedL;
 			trackVision();
 		}
 		else if(Input.getRightStickReleased()) shift(dSpeedL);

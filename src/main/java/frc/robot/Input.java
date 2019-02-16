@@ -102,7 +102,8 @@ public class Input{
     }
     
     public static void toggleLight(){
-        table.getEntry("ledMode").setNumber((table.getEntry("ledMode").getDouble(0)==0)? 1:0);
+        double lightMode = table.getEntry("ledMode").getDouble(0);
+        table.getEntry("ledMode").setNumber((lightMode==3)? 1:lightMode+1);
     }
     public static void shiftPipe(){
         table.getEntry("pipeline").setNumber((table.getEntry("pipeline").getDouble(0)==0)? 1:0);

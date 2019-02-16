@@ -39,6 +39,11 @@ public class Robot extends TimedRobot {
 	}
 	
 	@Override
+	public void disabledInit() {
+		MotorBase.driveDisable();
+	}
+	
+	@Override
 	public void autonomousInit() {//runs upon auto startup
 		Autonomous.setCommand(autoChoose.getSelected());
 		MotorBase.driveInit();

@@ -1,4 +1,4 @@
-package org.usfirst.frc.team4512.robot;
+package frc.robot;
 public class Encyclopedia{// a referendum of common terms you may see
     /*
     ** Nolan Brown

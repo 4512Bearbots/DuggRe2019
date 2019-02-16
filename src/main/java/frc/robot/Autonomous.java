@@ -1,4 +1,4 @@
-package org.usfirst.frc.team4512.robot;
+package frc.robot;
 
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 
@@ -9,8 +9,8 @@ public class Autonomous {
 
 	private static double forward = 0;
 	private static double turn = 0;
-	private static double kTurnP = 0.1;//proportional constant affecting turn rate
-	private static double kTurnF = 0.05;//base constant used to overcome friction
+	private static double kTurnP = 0.015;//proportional constant affecting turn rate
+	private static double kTurnF = 0.15;//base constant used to overcome friction
 	private static String command;
 	private static Timer time;
 	private static Timer timeTotal;
@@ -20,6 +20,7 @@ public class Autonomous {
 		MotorBase.shift(0.5);
 		time = new Timer();
 		timeTotal = new Timer();
+		command = "vision";
 		switch(Autonomous.command){
 			case "test":
 				time.reset();
@@ -44,15 +45,9 @@ public class Autonomous {
 				time.stop();
 			}
 			break;
+		//this is for targeting cargo
 		case "vision":
-			double tx = Input.getTx();
-			double angleError = 0;
-			if(tx>0.5){
-				angleError = kTurnP*(tx) + kTurnF;
-			} else if(tx<-0.5){
-				angleError = kTurnP*(-tx) - kTurnF;
-			}
-			turn = angleError;
+			trackVision();
 			break;
 		default:
 			setHeading(0);
@@ -61,6 +56,23 @@ public class Autonomous {
 		MotorBase.setDrive(forward, turn);
 	}
 
+	public static void trackVision(){
+		double tx = Input.getTx();
+		double angleError = 0;
+		if(tx>0.3){
+			angleError = kTurnP*(tx) + kTurnF;
+		} else if(tx<-0.3){
+			angleError = kTurnP*(tx) - kTurnF;
+		}
+		turn = angleError;
+		if(Input.getTa()!=0.0){
+			forward = 0.35;
+			MotorBase.setArms(1);
+		}else{
+			forward=0;
+			MotorBase.setArms(0);
+		}
+	}
 	public static void setHeading(double heading){
 		double angle = (Input.getAngle());
 		double bHeading = Input.constrainAngle(heading+180);
@@ -86,6 +98,13 @@ public class Autonomous {
 		SmartDashboard.putNumber("AutoTurn", turn);
 	}
 	
+	public static double getForward(){
+		return forward;
+	}
+	public static double getTurn(){
+		return turn;
+	}
+
 	public static void setCommand(String str){
 		Autonomous.command = str;
 	}

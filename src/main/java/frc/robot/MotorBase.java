@@ -1,4 +1,4 @@
-package org.usfirst.frc.team4512.robot;
+package frc.robot;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.DemandType;
@@ -29,11 +29,14 @@ public class MotorBase{
 
     /* Constants */
 	private static double dSpeed;//overall speed affecting robots actions
+	private static double dSpeedL;
 	private static double lHigh;//last non-zero lift power
 	private static double dForwardH;//last non-zero FORWARD value
 	private static double dTurnH;//last non-zero TURN value
 	private static double driveK;//value affecting the slew of acceleration
 	private static double liftK;//for lift
+	private static double kTurnP = 0.02;//see autonomous
+	private static double kTurnF = 0.35;
 	private static int lState;//determine state for executing lift commands
 	private static final int MAXLIFT = 4300;//top of the lift in counts(actual ~4400)
 	    
@@ -54,17 +57,30 @@ public class MotorBase{
 		armL.setInverted(false);
 		
 		/* Constant assignment */
-		dSpeed = 0.3;
+		dSpeed = dSpeedL = 0.3;
 		driveK = 0.2;
 		liftK=0.075;
 		dForwardH=lState = 0;
 		Input.reset();
 		System.out.println("--Feed Forward Teleop--");
-    }
+	}
+	
+	public static void driveDisable(){
+		setDrive(0, 0);
+		setLift(0);
+		setNeutral(NeutralMode.Coast);
+	}
 
     public static void drivePeriodic(){
 		/* Drive Base */
 		setDrive(Input.getLeftY(),Input.getRightX());
+
+		/* Intake */
+		double rTrigg = Input.getRightTrigger();
+		double lTrigg = Input.getLeftTrigger();
+		if(rTrigg > 0) setArms(rTrigg);
+		else if(lTrigg > 0) setArms(-lTrigg);
+		else setArms(0.25);
 		
 		/* Lift */ 
 		//stop the lift if bumpers are not pressed
@@ -81,6 +97,14 @@ public class MotorBase{
 		if(rightB && leftB) lState = 0;
 		else if(rightB) lState = 3;
 		else if(leftB) lState = 4;
+		if(Input.getBackButton()) Input.toggleLight();
+		if(Input.getStartButton()) Input.shiftPipe();
+		if(Input.getRightStick()) {
+			trackVision();
+		} else if(Input.getRightStickReleased()){
+			shift(dSpeedL);
+			dSpeed=dSpeedL;
+		}
 		//reset if pressing switches
 		if(down) onDown();//call methods when switches are pressed
 		if(up) onUp();
@@ -123,13 +147,6 @@ public class MotorBase{
 			break;
 		}
 		
-		/* Intake */
-		double rTrigg = Input.getRightTrigger();
-		double lTrigg = Input.getLeftTrigger();
-		if(rTrigg > 0) setArms(rTrigg);
-		else if(lTrigg > 0) setArms(-lTrigg);
-		else setArms(0.18);
-		
 		/* Drive <-> Lift */
 		//change speed if buttons are pressed
 		//dSpeed=(Input.getAButton())?0.2:dSpeed;
@@ -170,7 +187,19 @@ public class MotorBase{
 		liftF.set(power);
 		liftB.set(power);
     }
-    
+	
+	public static void trackVision(){
+		double tx = Input.getTx();
+		double angleError = 0;
+		if(tx>0.3){
+			angleError = kTurnP*(tx) + kTurnF;
+		} else if(tx<-0.3){
+			angleError = kTurnP*(tx) - kTurnF;
+		}
+		shift(0.5);
+		setDrive(Input.getLeftY(), angleError);
+	}
+
     public static void setArms(double power){
         armR.set(power);
         armL.set(power);
